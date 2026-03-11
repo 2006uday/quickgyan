@@ -38,6 +38,7 @@ export function DashboardSidebar() {
 
   const isAdmin = user?.role === "admin"
   const navItems = isAdmin ? adminNavItems : studentNavItems
+  
 
   return (
     <>

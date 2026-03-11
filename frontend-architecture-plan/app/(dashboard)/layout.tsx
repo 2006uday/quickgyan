@@ -25,9 +25,7 @@ export default function DashboardLayout({
   }
 
   // Only render the dashboard if user is confirmed
-  if (!user) {
-    return null
-  }
+
 
   return (
     <div className="flex min-h-screen">

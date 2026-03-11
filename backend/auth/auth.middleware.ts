@@ -59,4 +59,19 @@ async function detailsMiddleware(req: Request, res: Response, next: NextFunction
     }
 }
 
-export default { checkAccessTokenIsAbleToAccessMiddleware, loginMiddleware, detailsMiddleware };
+async function logoutMiddleware(req: Request, res: Response, next: NextFunction) {
+    try {
+        const token = req.cookies.accessToken;
+        if (!token) {
+            return res.status(401).json({ message: "Unauthorized" });
+        }
+        const decodedToken = jwt.verify(token, JWT_SECRET!);
+        req.user = decodedToken;
+        next();
+    } catch (error: any) {
+        console.log(error);
+        return res.status(500).json({ error: "Internal server error" });
+    }
+}
+
+export default { checkAccessTokenIsAbleToAccessMiddleware, loginMiddleware, detailsMiddleware, logoutMiddleware };

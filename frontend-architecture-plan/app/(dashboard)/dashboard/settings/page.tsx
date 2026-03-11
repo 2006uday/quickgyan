@@ -37,13 +37,24 @@ export default function SettingsPage() {
     setSaved(false)
   }
 
+  // const handleSave = async () => {
+
+  //   setIsSaving(true)
+  //   // Simulate API call
+  //   await new Promise((resolve) => setTimeout(resolve, 1000))
+  //   setIsSaving(false)
+  //   setSaved(true)
+  // }
+
   const handleSave = async () => {
+    const formdata = profile
+    console.log("Profile form submitted:", formdata)
     setIsSaving(true)
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 1000))
-    setIsSaving(false)
-    setSaved(true)
+
   }
+
+  // only one time name change is allowed
+  //onchange disable the input field but 
 
   return (
     <div className="space-y-6 pb-16 lg:pb-0">
@@ -72,7 +83,7 @@ export default function SettingsPage() {
                 {profile.name.charAt(0) || "U"}
               </div>
               <div>
-                <p className="font-medium">{profile.name}</p>
+                <p className="font-medium">{user?.name}</p>
                 <p className="text-sm text-muted-foreground">Student</p>
               </div>
             </div>
@@ -89,6 +100,7 @@ export default function SettingsPage() {
                     name="name"
                     value={profile.name}
                     onChange={handleProfileChange}
+
                     className="pl-9"
                   />
                 </div>
@@ -119,7 +131,7 @@ export default function SettingsPage() {
                     value={profile.enrollmentNo}
                     onChange={handleProfileChange}
                     className="pl-9"
-                    disabled
+
                   />
                 </div>
                 <p className="text-xs text-muted-foreground">

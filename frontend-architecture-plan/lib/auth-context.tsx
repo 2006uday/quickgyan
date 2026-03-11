@@ -36,6 +36,7 @@ interface AuthContextType {
   signup: (data: SignupData) => Promise<{ success: boolean; error?: string }>
   askAI: (message: string) => Promise<{ success: boolean; response?: string; error?: string }>
   logout: () => void
+  updateProfile: (data: User) => Promise<{ success: boolean; error?: string }>
 }
 
 // ---------------------------------------------------------------------------
@@ -108,7 +109,27 @@ export function AuthProvider({ children, initialUser }: { children: ReactNode, i
   // API: Login — POST /auth/login
   // ---------------------------------------------------------------------------
 
-
+  const updateProfile = async (
+    data: User,
+  ): Promise<{ success: boolean; error?: string }> => {
+    try {
+      const res = await axios.put(`${API_BASE}/update`, data, axiosConfig)
+      if (res.data?.user) {
+        const userData: User = {
+          id: res.data.user.id,
+          name: res.data.user.username,
+          email: res.data.user.email,
+          enrollmentNo: res.data.user.enrollment_no,
+          role: res.data.user.role || "student",
+          createdAt: res.data.user.createdAt || new Date().toISOString(),
+        };
+        setUser(userData);
+      }
+      return { success: true }
+    } catch (err) {
+      return { success: false, error: extractError(err, "Failed to update profile. Please try again.") }
+    }
+  }
 
   const login = async (
     email: string,
@@ -228,8 +249,8 @@ export function AuthProvider({ children, initialUser }: { children: ReactNode, i
       console.log("Logout API call started");
       console.log("axiosConfig : ", axiosConfig);
       console.log("API_BASE : ", API_BASE);
-      await new Promise(resolve => setTimeout(resolve, 9000));
-      await axios.get(`${API_BASE}/logout`, {
+      await new Promise(resolve => setTimeout(resolve, 10));
+      await axios.get(`http://localhost:8060/auth/logout`, {
         headers: {
           'Content-Type': 'application/json',
           'Accept': 'application/json'
@@ -268,7 +289,7 @@ export function AuthProvider({ children, initialUser }: { children: ReactNode, i
   // ---------------------------------------------------------------------------
 
   return (
-    <AuthContext.Provider value={{ user, isLoading, login, verifyOtp, sendOtp, signup, askAI, logout }}>
+    <AuthContext.Provider value={{ updateProfile, user, isLoading, login, verifyOtp, sendOtp, signup, askAI, logout }}>
       {children}
     </AuthContext.Provider>
   )

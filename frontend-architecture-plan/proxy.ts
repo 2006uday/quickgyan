@@ -6,19 +6,15 @@ import type { NextRequest } from 'next/server'
 // This function can be marked `async` if using `await` inside
 export function proxy(request: NextRequest) {
 
-    if (request.nextUrl.pathname.startsWith('/dashboard') && !request.cookies.get('accessToken')) {
+    if ((request.nextUrl.pathname.startsWith('/dashboard') || request.nextUrl.pathname.startsWith('/dashboard/[slug]')) && !request.cookies.get('accessToken')) {
         return NextResponse.redirect(new URL('/login', request.url))
     }
 
-    if (request.nextUrl.pathname.startsWith('/login') && request.cookies.get('accessToken')) {
+    if ((request.nextUrl.pathname.startsWith('/login') || request.nextUrl.pathname.startsWith('/login/[slug]')) && request.cookies.get('accessToken')) {
         return NextResponse.redirect(new URL('/dashboard', request.url))
     }
 
-    if (request.nextUrl.pathname.startsWith('/signup') && request.cookies.get('accessToken')) {
-        return NextResponse.redirect(new URL('/dashboard', request.url))
-    }
-
-    if (request.nextUrl.pathname.startsWith('/signup/verify-otp') && request.cookies.get('accessToken')) {
+    if ((request.nextUrl.pathname.startsWith('/signup') || request.nextUrl.pathname.startsWith('/signup/[slug]')) && request.cookies.get('accessToken')) {
         return NextResponse.redirect(new URL('/dashboard', request.url))
     }
     // return NextResponse.redirect(new URL('/login', request.url))
@@ -28,5 +24,5 @@ export function proxy(request: NextRequest) {
 // export default function proxy(request: NextRequest) { ... }
 
 export const config = {
-    matcher: ['/dashboard', '/login', '/signup'],
+    matcher: ['/dashboard', '/login', '/signup', '/dashboard/[slug]', '/login/[slug]', '/signup/[slug]'],
 }

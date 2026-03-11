@@ -79,10 +79,7 @@ async function loginPost(req: Request, res: Response) {
 
         const payload = {
             id: user._id,
-            username: user.username,
-            email: user.email,
-            enrollment_no: user.enrollment_no,
-            dob: user.dob,
+
             role: user.role,
         };
 
@@ -209,9 +206,12 @@ async function allOtpDelete(req: Request, res: Response) {
 }
 
 async function logoutPost(req: Request, res: Response) {
+    console.log("logoutPost");
     try {
         res.clearCookie("accessToken");
+        res.clearCookie("refreshToken");
         console.log("accessToken : ", req.cookies.accessToken);
+        console.log("refreshToken : ", req.cookies.refreshToken);
 
         console.log("User logged out successfully");
         return res.status(200).json({ message: "User logged out successfully" });
@@ -235,7 +235,7 @@ async function deleteUser(req: Request, res: Response) {
 async function getUserDetails(req: Request, res: Response) {
     try {
         const details = req.cookies.accessToken;
-        const decodedToken = jwt.verify(details, JWT_SECRET!);
+        const decodedToken = jwt.verify(details, JWT_SECRET!) as jwt.JwtPayload;
         return res.status(200).json({ message: "User details fetched successfully", user: decodedToken });
     } catch (error: any) {
         console.log(error);
@@ -245,17 +245,33 @@ async function getUserDetails(req: Request, res: Response) {
 
 async function checkAuth(req: Request, res: Response) {
     try {
-        const details = req.cookies.accessToken;
-
-        if (!details) {
+        const token = req.cookies.accessToken;
+        const decodedToken = jwt.verify(token, JWT_SECRET!) as jwt.JwtPayload;
+        // console.log("decodedToken : ", decodedToken);
+        if (!decodedToken) {
             return res.status(401).json({ error: "Unauthorized" });
         }
-        const decodedToken = jwt.verify(details, JWT_SECRET!);
-        return res.status(200).json({ message: "User is authorized", user: decodedToken });
+        const data = await User.findById({ _id: decodedToken.id });
+        return res.status(200).json({ message: "User is authorized", user: data });
     } catch (error: any) {
         console.log(error);
         return res.status(500).json({ error: "Internal server error" });
     }
 }
 
-export default { userPost, loginPost, logoutPost, deleteUser, getUserDetails, otpPost, otpVerifyPost, allOtpDelete, checkAuth };
+async function updateUserDetails(req: Request, res: Response) {
+    try {
+        const id = req.body.id;
+        const username = req.body?.username;
+        const email = req.body?.email;
+        const dob = req.body?.dob;
+        const enrollment_no = req.body?.enrollment_no;
+        const user = await User.findByIdAndUpdate(id, { username, email, dob, enrollment_no });
+        return res.status(200).json({ message: "User details updated successfully" });
+    } catch (error: any) {
+        console.log(error);
+        return res.status(500).json({ error: "Internal server error" });
+    }
+}
+
+export default { userPost, loginPost, logoutPost, deleteUser, getUserDetails, otpPost, otpVerifyPost, allOtpDelete, checkAuth, updateUserDetails };

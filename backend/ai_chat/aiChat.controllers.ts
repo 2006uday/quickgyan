@@ -5,7 +5,8 @@ import { GoogleGenAI } from "@google/genai";
 
 async function main(req: Request, res: Response) {
     try {
-        const ai = new GoogleGenAI({ apiKey: "AIzaSyBsSsog1KZP0SLpI2ktPCgqQeMbsOEO8tg" });
+
+        const ai = new GoogleGenAI({ apiKey: "AIzaSyBFe3L_QaFPcDBpSZhOt39h6WWakpxaLCM" });
         const response = await ai.models.generateContent({
             model: "gemini-3-flash-preview",
             contents: req.body.message,

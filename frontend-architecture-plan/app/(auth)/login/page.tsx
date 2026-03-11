@@ -29,7 +29,9 @@ export default function LoginPage() {
     setIsLoading(false)
 
     if (result.success) {
-      redirect('/dashboard')
+      
+      router.push('/dashboard')
+
     } else {
       setError(result.error || "Login failed. Please check your credentials.")
     }
