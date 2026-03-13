@@ -2,7 +2,8 @@
 
 import React from "react"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
+import { useRouter } from "next/navigation"
 import { useAuth } from "@/lib/auth-context"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -13,15 +14,27 @@ import { Switch } from "@/components/ui/switch"
 import { User, Mail, GraduationCap, Shield, Bell, Loader2, Check } from "lucide-react"
 
 export default function SettingsPage() {
-  const { user } = useAuth()
+  const router = useRouter()
+  const { user, isLoading, updateProfile, deleteAccount } = useAuth()
   const [isSaving, setIsSaving] = useState(false)
   const [saved, setSaved] = useState(false)
 
   const [profile, setProfile] = useState({
-    name: user?.name || "",
-    email: user?.email || "",
-    enrollmentNo: user?.enrollmentNo || "",
+    name: "",
+    email: "",
+    enrollmentNo: "",
   })
+
+  // Sync profile state when user data is available
+  useEffect(() => {
+    if (user) {
+      setProfile({
+        name: user.name || "",
+        email: user.email || "",
+        enrollmentNo: user.enrollmentNo || "",
+      })
+    }
+  }, [user])
 
   const [notifications, setNotifications] = useState({
     email: true,
@@ -50,11 +63,33 @@ export default function SettingsPage() {
     const formdata = profile
     console.log("Profile form submitted:", formdata)
     setIsSaving(true)
+    const res = await updateProfile(formdata as any)
+    if (res.success) {
+      setSaved(true)
+    }
+    setIsSaving(false)
 
   }
 
+  const handleDelete = async () => {
+    setIsSaving(true)
+    console.log("user?.id : ", user?.id);
+    const res = await deleteAccount(user?.id as string)
+    if (res.success) {
+      setSaved(true)
+    }
+    setIsSaving(false)
+  }
   // only one time name change is allowed
   //onchange disable the input field but 
+
+  if (isLoading || !user) {
+    return (
+      <div className="flex h-[60vh] items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    )
+  }
 
   return (
     <div className="space-y-6 pb-16 lg:pb-0">
@@ -80,7 +115,7 @@ export default function SettingsPage() {
           <CardContent className="space-y-4">
             <div className="flex items-center gap-4">
               <div className="flex h-16 w-16 items-center justify-center rounded-full bg-primary/10 text-2xl font-bold text-primary">
-                {profile.name.charAt(0) || "U"}
+                {user?.name.charAt(0).toUpperCase()}  
               </div>
               <div>
                 <p className="font-medium">{user?.name}</p>
@@ -117,6 +152,7 @@ export default function SettingsPage() {
                     value={profile.email}
                     onChange={handleProfileChange}
                     className="pl-9"
+                    disabled
                   />
                 </div>
               </div>
@@ -242,7 +278,12 @@ export default function SettingsPage() {
                   Update your password regularly for better security
                 </p>
               </div>
-              <Button variant="outline">Change Password</Button>
+              <Button 
+                variant="outline" 
+                onClick={() => router.push("/dashboard/settings/change-password")}
+              >
+                Change Password
+              </Button>
             </div>
 
             <Separator />
@@ -264,7 +305,7 @@ export default function SettingsPage() {
               <p className="mt-1 text-sm text-muted-foreground">
                 Permanently delete your account and all associated data
               </p>
-              <Button variant="destructive" size="sm" className="mt-3">
+              <Button variant="destructive" onClick={handleDelete} size="sm" className="mt-3">
                 Delete Account
               </Button>
             </div>

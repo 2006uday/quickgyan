@@ -222,9 +222,14 @@ async function logoutPost(req: Request, res: Response) {
 }
 
 async function deleteUser(req: Request, res: Response) {
+    console.log("deleteUser : ", req.params);
     try {
-        const { id } = req.params;
-        const user = await User.findByIdAndDelete(id);
+
+        const id = req.id;
+        console.log(" id : ", id);
+        const user = await User.findByIdAndDelete({ _id: id });
+        res.clearCookie("accessToken");
+        res.clearCookie("refreshToken");
         return res.status(200).json({ message: "User deleted successfully" });
     } catch (error: any) {
         console.log(error);
@@ -261,17 +266,79 @@ async function checkAuth(req: Request, res: Response) {
 
 async function updateUserDetails(req: Request, res: Response) {
     try {
-        const id = req.body.id;
-        const username = req.body?.username;
-        const email = req.body?.email;
-        const dob = req.body?.dob;
-        const enrollment_no = req.body?.enrollment_no;
-        const user = await User.findByIdAndUpdate(id, { username, email, dob, enrollment_no });
-        return res.status(200).json({ message: "User details updated successfully" });
+        console.log("req.body : ", req.body);
+
+        const id = req.id;
+        if (!id) {
+            return res.status(401).json({ error: "Unauthorized: User ID not found in token" });
+        }
+
+        const { username, name, email, dob, enrollment_no, enrollmentNo } = req.body;
+
+        // Map frontend field names to backend schema fields
+        const finalUsername = username || name;
+        const finalEnrollmentNo = enrollment_no || enrollmentNo;
+
+        const updateData: any = {};
+        if (finalUsername) updateData.username = finalUsername;
+        if (email) updateData.email = email;
+        if (dob) updateData.dob = dob;
+        if (finalEnrollmentNo) updateData.enrollment_no = finalEnrollmentNo;
+
+        if (Object.keys(updateData).length > 0) {
+            const user = await User.findByIdAndUpdate(id, { $set: updateData }, { new: true });
+            return res.status(200).json({ message: "User details updated successfully", user });
+        }
+        return res.status(400).json({ error: "No update details provided" });
     } catch (error: any) {
         console.log(error);
         return res.status(500).json({ error: "Internal server error" });
     }
 }
 
-export default { userPost, loginPost, logoutPost, deleteUser, getUserDetails, otpPost, otpVerifyPost, allOtpDelete, checkAuth, updateUserDetails };
+async function verifyOldPassword(req: Request, res: Response) {
+    try {
+        const id = req.id;
+        const { oldPassword } = req.body;
+
+        if (!oldPassword) {
+            return res.status(400).json({ error: "Old password is required" });
+        }
+
+        const user = await User.findById(id);
+        if (!user) {
+            return res.status(404).json({ error: "User not found" });
+        }
+
+        const isPasswordValid = await bcrypt.compare(oldPassword, user.password);
+        if (!isPasswordValid) {
+            return res.status(400).json({ error: "Invalid old password" });
+        }
+
+        return res.status(200).json({ message: "Old password verified", email: user.email });
+    } catch (error: any) {
+        console.log(error);
+        return res.status(500).json({ error: "Internal server error" });
+    }
+}
+
+async function passwordChange(req: Request, res: Response) {
+    try {
+        const id = req.id;
+        const { newPassword } = req.body;
+
+        if (!newPassword) {
+            return res.status(400).json({ error: "New password is required" });
+        }
+
+        const hashPassword = await bcrypt.hash(newPassword, 10);
+        const user = await User.findByIdAndUpdate(id, { $set: { password: hashPassword } }, { new: true });
+        return res.status(200).json({ message: "Password changed successfully" });
+
+    } catch (error: any) {
+        console.log(error);
+        return res.status(500).json({ error: "Internal server error" });
+    }
+}
+  
+export default { userPost, loginPost, logoutPost, deleteUser, getUserDetails, otpPost, otpVerifyPost, allOtpDelete, checkAuth, updateUserDetails, passwordChange, verifyOldPassword };

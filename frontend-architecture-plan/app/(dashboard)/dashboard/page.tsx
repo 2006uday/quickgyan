@@ -15,6 +15,9 @@ import {
   Calendar,
   Bell,
 } from "lucide-react"
+import { useEffect } from "react"
+
+
 
 const quickAccessCards = [
   {
@@ -75,7 +78,11 @@ const announcements = [
 ]
 
 export default function DashboardPage() {
-  const { user } = useAuth()
+  const { user, checkUser } = useAuth()
+
+  useEffect(() => {
+    checkUser();
+  }, [])
 
   return (
     <div className="space-y-6 pb-16 lg:pb-0">

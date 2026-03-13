@@ -6,9 +6,11 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Switch } from "@/components/ui/switch"
 import { Separator } from "@/components/ui/separator"
-import { Settings, Bell, Shield, Database, Globe, Mail } from "lucide-react"
+import { useRouter } from "next/navigation"
+import { Settings, Bell, Shield, Database, Globe, Mail, Key } from "lucide-react"
 
 export default function AdminSettingsPage() {
+  const router = useRouter()
   return (
     <div className="space-y-6 pb-16 lg:pb-0">
       <div>
@@ -131,6 +133,22 @@ export default function AdminSettingsPage() {
               </div>
               <Button variant="outline" size="sm">
                 Configure
+              </Button>
+            </div>
+            <Separator />
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="font-medium">Admin Password</p>
+                <p className="text-sm text-muted-foreground">
+                  Update your administrator access credentials
+                </p>
+              </div>
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => router.push("/dashboard/settings/change-password")}
+              >
+                Change Password
               </Button>
             </div>
           </CardContent>

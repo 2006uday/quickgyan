@@ -37,6 +37,10 @@ interface AuthContextType {
   askAI: (message: string) => Promise<{ success: boolean; response?: string; error?: string }>
   logout: () => void
   updateProfile: (data: User) => Promise<{ success: boolean; error?: string }>
+  deleteAccount: (id: string) => Promise<{ success: boolean; error?: string }>
+  checkUser: () => Promise<void>
+  verifyOldPassword: (oldPassword: string) => Promise<{ success: boolean; email?: string; error?: string }>
+  changePassword: (newPassword: string) => Promise<{ success: boolean; error?: string }>
 }
 
 // ---------------------------------------------------------------------------
@@ -79,29 +83,30 @@ export function AuthProvider({ children, initialUser }: { children: ReactNode, i
 
   const [user, setUser] = useState<User | null>(initialUser || null)
 
-  useEffect(() => {
-    const checkUser = async () => {
-      try {
-        const res = await axios.get(`${API_BASE}/me`, axiosConfig);
-        if (res.data?.user) {
-          const userData: User = {
-            id: res.data.user.id,
-            name: res.data.user.username,
-            email: res.data.user.email,
-            enrollmentNo: res.data.user.enrollment_no,
-            role: res.data.user.role || "student",
-            createdAt: res.data.user.createdAt || new Date().toISOString(),
-          };
-          setUser(userData);
-        }
-      } catch (err) {
-        // Not logged in or session expired
-        setUser(null);
-      } finally {
-        setIsLoading(false);
+  const checkUser = async () => {
+    try {
+      const res = await axios.get(`${API_BASE}/me`, axiosConfig);
+      if (res.data?.user) {
+        const u = res.data.user;
+        const userData: User = {
+          id: u.id || u._id,
+          name: u.username || u.name || "",
+          email: u.email || "",
+          enrollmentNo: u.enrollment_no || u.enrollmentNo || "",
+          role: u.role || "student",
+          createdAt: u.createdAt || new Date().toISOString(),
+        };
+        setUser(userData);
       }
-    };
+    } catch (err) {
+      // Not logged in or session expired
+      setUser(null);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
+  useEffect(() => {
     checkUser();
   }, [])
 
@@ -113,15 +118,18 @@ export function AuthProvider({ children, initialUser }: { children: ReactNode, i
     data: User,
   ): Promise<{ success: boolean; error?: string }> => {
     try {
-      const res = await axios.put(`${API_BASE}/update`, data, axiosConfig)
+      console.log("data : ", data);
+
+      const res = await axios.put(`http://localhost:8060/auth/update`, data, axiosConfig)
       if (res.data?.user) {
+        const u = res.data.user;
         const userData: User = {
-          id: res.data.user.id,
-          name: res.data.user.username,
-          email: res.data.user.email,
-          enrollmentNo: res.data.user.enrollment_no,
-          role: res.data.user.role || "student",
-          createdAt: res.data.user.createdAt || new Date().toISOString(),
+          id: u.id || u._id,
+          name: u.username || u.name || "",
+          email: u.email || "",
+          enrollmentNo: u.enrollment_no || u.enrollmentNo || "",
+          role: u.role || "student",
+          createdAt: u.createdAt || new Date().toISOString(),
         };
         setUser(userData);
       }
@@ -145,13 +153,14 @@ export function AuthProvider({ children, initialUser }: { children: ReactNode, i
       })
 
       if (res.data?.user) {
+        const u = res.data.user;
         const userData: User = {
-          id: res.data.user.id,
-          name: res.data.user.username,
-          email: res.data.user.email,
-          enrollmentNo: res.data.user.enrollment_no,
-          role: res.data.user.role || "student",
-          createdAt: res.data.user.createdAt || new Date().toISOString(),
+          id: u.id || u._id,
+          name: u.username || u.name || "",
+          email: u.email || "",
+          enrollmentNo: u.enrollment_no || u.enrollmentNo || "",
+          role: u.role || "student",
+          createdAt: u.createdAt || new Date().toISOString(),
         };
         setUser(userData);
       }
@@ -174,16 +183,22 @@ export function AuthProvider({ children, initialUser }: { children: ReactNode, i
     try {
       const res = await axios.post(`${API_BASE}/otp/verify`, { email, otp }, axiosConfig)
 
-      // Persist the user returned by the API (if any), otherwise store email only
-      const userData: User = {
-        id: res.data?.id ?? Date.now().toString(),
-        name: res.data?.name ?? "",
-        email: res.data?.email ?? email,
-        enrollmentNo: res.data?.enrollmentNo ?? res.data?.enrollment_no ?? "",
-        role: res.data?.role ?? "student",
-        createdAt: res.data?.createdAt ?? new Date().toISOString(),
+      // If the API returns a user (Conclusion of login/signup), use it
+      if (res.data?.user) {
+        const u = res.data.user;
+        const userData: User = {
+          id: u.id || u._id,
+          name: u.username || u.name || "",
+          email: u.email || "",
+          enrollmentNo: u.enrollment_no || u.enrollmentNo || "",
+          role: u.role || "student",
+          createdAt: u.createdAt || new Date().toISOString(),
+        }
+        setUser(userData)
+      } else {
+        // Otherwise, refresh the state from the session cookies to ensure all fields are loaded
+        await checkUser()
       }
-      setUser(userData)
 
       return { success: true }
     } catch (err) {
@@ -199,6 +214,8 @@ export function AuthProvider({ children, initialUser }: { children: ReactNode, i
     email: string,
   ): Promise<{ success: boolean; error?: string }> => {
     try {
+      console.log("email : ", email);
+
       await axios.post(`${API_BASE}/otp`, { email }, axiosConfig)
       return { success: true }
     } catch (err) {
@@ -284,12 +301,61 @@ export function AuthProvider({ children, initialUser }: { children: ReactNode, i
     }
   }
 
+  const deleteAccount = async (
+    id: string,
+  ): Promise<{ success: boolean; error?: string }> => {
+    try {
+      console.log("id : ", id);
+      const res = await axios.delete(`${API_BASE}/delete-account/`, {
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        withCredentials: true,
+      })
+      return { success: true }
+    } catch (err) {
+      return { success: false, error: extractError(err, "Failed to delete account. Please try again.") }
+    }
+  }
+
+  const verifyOldPassword = async (oldPassword: string): Promise<{ success: boolean; email?: string; error?: string }> => {
+    try {
+      const res = await axios.post(`${API_BASE}/verify-old-password`, { oldPassword }, axiosConfig)
+      return { success: true, email: res.data.email }
+    } catch (err) {
+      return { success: false, error: extractError(err, "Incorrect old password.") }
+    }
+  }
+
+  const changePassword = async (newPassword: string): Promise<{ success: boolean; error?: string }> => {
+    try {
+      await axios.put(`${API_BASE}/password-change`, { newPassword }, axiosConfig)
+      return { success: true }
+    } catch (err) {
+      return { success: false, error: extractError(err, "Failed to change password.") }
+    }
+  }
+
   // ---------------------------------------------------------------------------
   // Provider
   // ---------------------------------------------------------------------------
 
   return (
-    <AuthContext.Provider value={{ updateProfile, user, isLoading, login, verifyOtp, sendOtp, signup, askAI, logout }}>
+    <AuthContext.Provider value={{
+      updateProfile,
+      deleteAccount,
+      user,
+      isLoading,
+      login,
+      verifyOtp,
+      sendOtp,
+      signup,
+      askAI,
+      logout,
+      checkUser,
+      verifyOldPassword,
+      changePassword
+    }}>
       {children}
     </AuthContext.Provider>
   )
