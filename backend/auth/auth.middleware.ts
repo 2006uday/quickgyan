@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from "express";
 import jwt from "jsonwebtoken";
 import dotenv from "dotenv";
+import { User } from "./auth.model";
 dotenv.config();
 
 const JWT_SECRET = process.env.JWT_SECRET;
@@ -91,5 +92,39 @@ async function passwordChangeMiddleware(req: Request, res: Response, next: NextF
         return res.status(500).json({ error: "Internal server error" });
     }
 }
+async function lastActiveMiddleware(req: Request, res: Response, next: NextFunction) {
+    try {
+        const userId = req.id || (req.user as any)?.id;
+        if (userId) {
+            const user = await User.findByIdAndUpdate(userId, { lastActive: new Date() }, { new: true });
+            
+            if (user && user.status === "suspended") {
+                res.clearCookie("accessToken");
+                res.clearCookie("refreshToken");
+                return res.status(403).json({ error: "Your account has been suspended. Please contact the administrator." });
+            }
+        }
+        next();
+    } catch (error) {
+        console.error("Error updating lastActive:", error);
+        next();
+    }
+}
+async function adminMiddleware(req: Request, res: Response, next: NextFunction) {
+    try {
+        const token = req.cookies.accessToken;
+        if (!token) {
+            return res.status(401).json({ error: "Unauthorized" });
+        }
+        const decodedToken = jwt.verify(token, JWT_SECRET!) as any;
+        if (decodedToken.role !== "admin") {
+            return res.status(403).json({ error: "Forbidden: Admins only" });
+        }
+        req.id = decodedToken.id;
+        next();
+    } catch (error) {
+        return res.status(401).json({ error: "Unauthorized" });
+    }
+}
 
-export default { checkAccessTokenIsAbleToAccessMiddleware, loginMiddleware, detailsMiddleware, logoutMiddleware, passwordChangeMiddleware };
+export default { checkAccessTokenIsAbleToAccessMiddleware, loginMiddleware, detailsMiddleware, logoutMiddleware, passwordChangeMiddleware, lastActiveMiddleware, adminMiddleware };

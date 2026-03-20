@@ -12,6 +12,8 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
+import { useState, useEffect } from "react"
+import { useAuth } from "@/lib/auth-context"
 import {
   Users,
   FileText,
@@ -22,37 +24,6 @@ import {
   Upload,
   AlertCircle,
 } from "lucide-react"
-
-const stats = [
-  {
-    title: "Total Users",
-    value: "1,247",
-    change: "+12%",
-    icon: Users,
-    color: "bg-primary/10 text-primary",
-  },
-  {
-    title: "Total Resources",
-    value: "526",
-    change: "+8%",
-    icon: FileText,
-    color: "bg-accent/20 text-accent-foreground",
-  },
-  {
-    title: "Active Courses",
-    value: "24",
-    change: "+2",
-    icon: GraduationCap,
-    color: "bg-green-100 text-green-700",
-  },
-  {
-    title: "AI Queries Today",
-    value: "3,842",
-    change: "+23%",
-    icon: TrendingUp,
-    color: "bg-blue-100 text-blue-700",
-  },
-]
 
 const recentUploads = [
   {
@@ -97,6 +68,59 @@ const recentUsers = [
 ]
 
 export default function AdminDashboard() {
+  const { getAdminStats } = useAuth()
+  const [stats, setStats] = useState({
+    totalUsers: 0,
+    activeUsers: 0,
+    totalResources: 526,
+    activeCourses: 24,
+  })
+
+  useEffect(() => {
+    const loadStats = async () => {
+      const response = await getAdminStats()
+      if (response.success && response.data) {
+        setStats(prev => ({
+          ...prev,
+          totalUsers: response.data.totalUsers,
+          activeUsers: response.data.activeUsers
+        }))
+      }
+    }
+    loadStats()
+  }, [])
+
+  const statCards = [
+    {
+      title: "Total Users",
+      value: stats.totalUsers.toLocaleString(),
+      change: "+12%",
+      icon: Users,
+      color: "bg-primary/10 text-primary",
+    },
+    {
+      title: "Currently Active",
+      value: stats.activeUsers.toLocaleString(),
+      change: "Live",
+      icon: Activity,
+      color: "bg-green-100 text-green-700",
+    },
+    {
+      title: "Active Courses",
+      value: stats.activeCourses.toString(),
+      change: "+2",
+      icon: GraduationCap,
+      color: "bg-blue-100 text-blue-700",
+    },
+    {
+      title: "Total Resources",
+      value: stats.totalResources.toString(),
+      change: "+8%",
+      icon: FileText,
+      color: "bg-accent/20 text-accent-foreground",
+    },
+  ]
+
   return (
     <div className="space-y-6 pb-16 lg:pb-0">
       {/* Header */}
@@ -122,7 +146,7 @@ export default function AdminDashboard() {
 
       {/* Stats Grid */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {stats.map((stat) => (
+        {statCards.map((stat) => (
           <Card key={stat.title}>
             <CardContent className="flex items-center gap-4 p-4">
               <div className={`rounded-lg p-3 ${stat.color}`}>

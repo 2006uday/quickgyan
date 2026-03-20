@@ -14,7 +14,10 @@ export interface User {
   enrollmentNo: string
   role: "student" | "admin"
   createdAt: string
+  lastActive?: string
 }
+
+
 
 export interface SignupData {
   name: string
@@ -41,6 +44,14 @@ interface AuthContextType {
   checkUser: () => Promise<void>
   verifyOldPassword: (oldPassword: string) => Promise<{ success: boolean; email?: string; error?: string }>
   changePassword: (newPassword: string) => Promise<{ success: boolean; error?: string }>
+  addCourses: (courseName: string, courseCode: string, credits: number, semester: number) => Promise<{ success: boolean; error?: string }>
+  getCourses: () => Promise<{ success: boolean; data?: any; error?: string }>
+  updateCourse: (courseName: string, courseCode: string, credits: number, semester: number, id: string) => Promise<{ success: boolean; error?: string }>
+  deleteCourse: (id: string) => Promise<{ success: boolean; error?: string }>
+  getAdminStats: () => Promise<{ success: boolean; data?: any; error?: string }>
+  getAllUsers: () => Promise<{ success: boolean; data?: any; error?: string }>
+  updateUserStatus: (id: string, status: string) => Promise<{ success: boolean; error?: string }>
+  sendAccountStatusEmail: (id: string) => Promise<{ success: boolean; error?: string }>
 }
 
 // ---------------------------------------------------------------------------
@@ -95,6 +106,7 @@ export function AuthProvider({ children, initialUser }: { children: ReactNode, i
           enrollmentNo: u.enrollment_no || u.enrollmentNo || "",
           role: u.role || "student",
           createdAt: u.createdAt || new Date().toISOString(),
+          lastActive: u.lastActive,
         };
         setUser(userData);
       }
@@ -109,6 +121,33 @@ export function AuthProvider({ children, initialUser }: { children: ReactNode, i
   useEffect(() => {
     checkUser();
   }, [])
+  const updateCourse = async (
+    courseName: string,
+    courseCode: string,
+    credits: number,
+    semester: number,
+    id: string
+  ): Promise<{ success: boolean; error?: string }> => {
+    try {
+      const res = await axios.put(`http://localhost:8060/courses/update-course`, { courseName, courseCode, credits, semester, id }, axiosConfig)
+      if (res.data?.user) {
+        const u = res.data.user;
+        const userData: User = {
+          id: u.id || u._id,
+          name: u.username || u.name || "",
+          email: u.email || "",
+          enrollmentNo: u.enrollment_no || u.enrollmentNo || "",
+          role: u.role || "student",
+          createdAt: u.createdAt || new Date().toISOString(),
+          lastActive: u.lastActive,
+        };
+        setUser(userData);
+      }
+      return { success: true }
+    } catch (err) {
+      return { success: false, error: extractError(err, "Failed to update course. Please try again.") }
+    }
+  }
 
   // ---------------------------------------------------------------------------
   // API: Login — POST /auth/login
@@ -130,6 +169,7 @@ export function AuthProvider({ children, initialUser }: { children: ReactNode, i
           enrollmentNo: u.enrollment_no || u.enrollmentNo || "",
           role: u.role || "student",
           createdAt: u.createdAt || new Date().toISOString(),
+          lastActive: u.lastActive,
         };
         setUser(userData);
       }
@@ -161,6 +201,7 @@ export function AuthProvider({ children, initialUser }: { children: ReactNode, i
           enrollmentNo: u.enrollment_no || u.enrollmentNo || "",
           role: u.role || "student",
           createdAt: u.createdAt || new Date().toISOString(),
+          lastActive: u.lastActive,
         };
         setUser(userData);
       }
@@ -193,6 +234,7 @@ export function AuthProvider({ children, initialUser }: { children: ReactNode, i
           enrollmentNo: u.enrollment_no || u.enrollmentNo || "",
           role: u.role || "student",
           createdAt: u.createdAt || new Date().toISOString(),
+          lastActive: u.lastActive,
         }
         setUser(userData)
       } else {
@@ -318,6 +360,36 @@ export function AuthProvider({ children, initialUser }: { children: ReactNode, i
     }
   }
 
+  const addCourses = async (courseName: string, courseCode: string, credits: number, semester: number): Promise<{ success: boolean; error?: string }> => {
+    try {
+      const res = await axios.post(`http://localhost:8060/courses/add-course`, { courseName, courseCode, credits, semester }, axiosConfig)
+      return { success: true }
+    } catch (err) {
+      return { success: false, error: extractError(err, "Failed to add course. Please try again.") }
+    }
+  }
+
+  const getCourses = async (): Promise<{ success: boolean; data?: any; error?: string }> => {
+    try {
+      const res = await axios.get(`http://localhost:8060/courses/get-courses`, axiosConfig)
+      return { success: true, data: res.data }
+    } catch (err) {
+      return { success: false, error: extractError(err, "Failed to get courses. Please try again.") }
+    }
+  }
+
+  const deleteCourse = async (id: string): Promise<{ success: boolean; error?: string }> => {
+    try {
+      await axios.delete(`http://localhost:8060/courses/delete-course`, {
+        ...axiosConfig,
+        data: { id }
+      })
+      return { success: true }
+    } catch (err) {
+      return { success: false, error: extractError(err, "Failed to delete course. Please try again.") }
+    }
+  }
+
   const verifyOldPassword = async (oldPassword: string): Promise<{ success: boolean; email?: string; error?: string }> => {
     try {
       const res = await axios.post(`${API_BASE}/verify-old-password`, { oldPassword }, axiosConfig)
@@ -336,14 +408,57 @@ export function AuthProvider({ children, initialUser }: { children: ReactNode, i
     }
   }
 
+  const getAdminStats = async (): Promise<{ success: boolean; data?: any; error?: string }> => {
+    try {
+      const res = await axios.get(`${API_BASE}/admin/stats`, axiosConfig)
+      return { success: true, data: res.data }
+    } catch (err) {
+      return { success: false, error: extractError(err, "Failed to get admin stats.") }
+    }
+  }
+
+  const getAllUsers = async (): Promise<{ success: boolean; data?: any; error?: string }> => {
+    try {
+      const res = await axios.get(`${API_BASE}/admin/users`, axiosConfig)
+      return { success: true, data: res.data }
+    } catch (err) {
+      return { success: false, error: extractError(err, "Failed to get users list.") }
+    }
+  }
+
+  const sendAccountStatusEmail = async (id: string): Promise<{ success: boolean; error?: string }> => {
+    try {
+      await axios.post(`${API_BASE}/admin/send-email`, { id }, axiosConfig)
+      return { success: true }
+    } catch (err) {
+      return { success: false, error: extractError(err, "Failed to send account status email.") }
+    }
+  }
+
+  const updateUserStatus = async (id: string, status: string): Promise<{ success: boolean; error?: string }> => {
+    try {
+      await axios.put(`${API_BASE}/admin/status-update`, { id, status }, axiosConfig)
+      return { success: true }
+    } catch (err) {
+      return { success: false, error: extractError(err, "Failed to update user status.") }
+    }
+  }
+
   // ---------------------------------------------------------------------------
   // Provider
   // ---------------------------------------------------------------------------
 
   return (
     <AuthContext.Provider value={{
+      addCourses,
+      updateCourse,
+      deleteCourse,
+      getCourses,
       updateProfile,
       deleteAccount,
+      getAdminStats,
+      getAllUsers,
+      updateUserStatus,
       user,
       isLoading,
       login,
@@ -354,7 +469,8 @@ export function AuthProvider({ children, initialUser }: { children: ReactNode, i
       logout,
       checkUser,
       verifyOldPassword,
-      changePassword
+      changePassword,
+      sendAccountStatusEmail
     }}>
       {children}
     </AuthContext.Provider>

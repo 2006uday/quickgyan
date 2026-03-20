@@ -1,5 +1,6 @@
 // Mock data for quickGyan educational platform
-
+import { useAuth } from "@/lib/auth-context"
+import { log } from "console"
 export interface Course {
   id: string
   code: string
@@ -26,6 +27,10 @@ export interface Resource {
   year?: number
 }
 
+
+// NOTE: semesters is now managed globally in AuthContext (lib/auth-context.tsx).
+// Use useAuth().semesters in components to get live data from the API.
+// This static export remains as a fallback/initial data structure.
 export const semesters: Semester[] = [
   {
     id: 1,

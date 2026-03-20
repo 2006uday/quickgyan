@@ -49,6 +49,7 @@ async function userPost(req: Request, res: Response) {
                 username: user.username,
                 email: user.email,
                 enrollment_no: user.enrollment_no,
+                lastActive: user.lastActive,
             },
         });
     } catch (error: any) {
@@ -70,6 +71,10 @@ async function loginPost(req: Request, res: Response) {
         const user = await User.findOne({ email });
         if (!user) {
             return res.status(400).json({ error: "User not found" });
+        }
+
+        if (user.status === "suspended") {
+            return res.status(403).json({ error: "Your account has been suspended. Please contact the administrator." });
         }
 
         const isPasswordValid = await bcrypt.compare(password, user.password);
@@ -106,6 +111,7 @@ async function loginPost(req: Request, res: Response) {
                 username: user.username,
                 email: user.email,
                 dob: user.dob,
+                lastActive: user.lastActive,
             },
         });
     } catch (error: any) {
@@ -340,5 +346,101 @@ async function passwordChange(req: Request, res: Response) {
         return res.status(500).json({ error: "Internal server error" });
     }
 }
-  
-export default { userPost, loginPost, logoutPost, deleteUser, getUserDetails, otpPost, otpVerifyPost, allOtpDelete, checkAuth, updateUserDetails, passwordChange, verifyOldPassword };
+
+async function getAllUsers(req: Request, res: Response) {
+    try {
+        const users = await User.find({}, { password: 0, refreshToken: 0 }); // Exclude sensitive fields
+        return res.status(200).json(users);
+    } catch (error) {
+        console.error("Error in getAllUsers:", error);
+        return res.status(500).json({ error: "Internal server error" });
+    }
+}
+
+async function getAdminStats(req: Request, res: Response) {
+    try {
+        const totalUsers = await User.countDocuments();
+        const activeThreshold = new Date(Date.now() - 5 * 60 * 1000); // Active in last 5 minutes
+        const activeUsersCount = await User.countDocuments({ lastActive: { $gte: activeThreshold } });
+
+        return res.status(200).json({
+            totalUsers,
+            activeUsers: activeUsersCount
+        });
+    } catch (error) {
+        console.error("Error in getAdminStats:", error);
+        return res.status(500).json({ error: "Internal server error" });
+    }
+}
+
+async function updateUserStatus(req: Request, res: Response) {
+    try {
+        const { id, status } = req.body;
+        if (!id || !status) {
+            return res.status(400).json({ error: "User ID and status are required" });
+        }
+        await User.findByIdAndUpdate(id, { $set: { status } });
+        return res.status(200).json({ message: "User status updated successfully" });
+    } catch (error) {
+        console.error("Error in updateUserStatus:", error);
+        return res.status(500).json({ error: "Internal server error" });
+    }
+}
+
+async function statusUpdate(req: Request, res: Response) {
+    try {
+        const { id, status } = req.body;
+        if (!id || !status) {
+            return res.status(400).json({ error: "User ID and status are required" });
+        }
+        const user = await User.findByIdAndUpdate(id, { $set: { status } });
+
+        if (!user) {
+            return res.status(404).json({ error: "User not found" });
+        }
+
+        return res.status(200).json({ message: "User status updated successfully" });
+    } catch (error) {
+        console.error("Error in statusUpdate:", error);
+        return res.status(500).json({ error: "Internal server error" });
+    }
+}
+
+async function sendAccountStatusEmail(req: Request, res: Response) {
+    try {
+        const { id } = req.body;
+        if (!id) {
+            return res.status(400).json({ error: "User ID is required" });
+        }
+
+        const user = await User.findById(id);
+        if (!user) {
+            return res.status(404).json({ error: "User not found" });
+        }
+
+        const transporter = nodemailer.createTransport({
+            service: "gmail",
+            auth: {
+                user: process.env.EMAIL || "ak5884771@gmail.com",
+                pass: process.env.PASSWORD || "fvmf isai vkgs rpwn",
+            },
+        });
+
+        const statusLabel = user.status === "suspended" ? "suspended" : "active";
+        
+        const mailOptions = {
+            from: process.env.EMAIL || "ak5884771@gmail.com",
+            to: user.email,
+            subject: `Account Status Update - QuickGyan`,
+            text: `Hello ${user.username || 'User'},\n\nYour account status is currently: ${statusLabel.toUpperCase()}.\n\nIf you have any questions, please contact the administrator.\n\nBest regards,\nQuickGyan Team`,
+        };
+
+        await transporter.sendMail(mailOptions);
+        return res.status(200).json({ message: "Status email sent successfully" });
+    } catch (error) {
+        console.error("Error in sendAccountStatusEmail:", error);
+        return res.status(500).json({ error: "Internal server error" });
+    }
+}
+
+export default { userPost, loginPost, logoutPost, deleteUser, getUserDetails, otpPost, otpVerifyPost, allOtpDelete, checkAuth, updateUserDetails, passwordChange, verifyOldPassword, getAllUsers, getAdminStats, updateUserStatus, statusUpdate, sendAccountStatusEmail };

@@ -8,6 +8,8 @@ type User = {
     role: string;
     refreshToken: string[];
     enrollment_no: Number;
+    status: string;
+    lastActive: Date;
 }
 
 const UserSchema = new mongoose.Schema<User>(
@@ -41,6 +43,11 @@ const UserSchema = new mongoose.Schema<User>(
             required: true,
             trim: true,
         },
+        status: {
+            type: String,
+            enum: ["active", "suspended"],
+            default: "active"
+        },
         role:
         {
             type: String,
@@ -50,6 +57,10 @@ const UserSchema = new mongoose.Schema<User>(
         {
             type: [String],
             default: []
+        },
+        lastActive: {
+            type: Date,
+            default: Date.now
         }
     },
     {
