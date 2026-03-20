@@ -22,7 +22,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { resources, semesters } from "@/lib/mock-data"
 import {
   Search,
   FileText,
@@ -34,7 +33,9 @@ import {
   Calendar,
   HardDrive,
   X,
+  Loader2,
 } from "lucide-react"
+import { useEffect } from "react"
 
 const resourceTypeIcons = {
   book: BookOpen,
@@ -55,34 +56,63 @@ export default function ResourcesPage() {
     searchParams.get("semester") || "all"
   )
   const [selectedTypes, setSelectedTypes] = useState<string[]>([])
-  const [previewResource, setPreviewResource] = useState<string | null>(null)
+  const [previewResource, setPreviewResource] = useState<any | null>(null)
   const [showFilters, setShowFilters] = useState(false)
+  const [realResources, setRealResources] = useState<any[]>([])
+  const [coursesFromDb, setCoursesFromDb] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
+
+  const fetchAllData = async () => {
+    try {
+      setLoading(true)
+      const [resRes, courseRes] = await Promise.all([
+        fetch("http://localhost:8060/resources/getresource"),
+        fetch("http://localhost:8060/courses/get-courses")
+      ])
+      const resData = await resRes.json()
+      const courseData = await courseRes.json()
+      
+      if (resRes.ok) setRealResources(resData.resources || [])
+      if (courseRes.ok) setCoursesFromDb(courseData || [])
+    } catch (error) {
+      console.error("Failed to fetch library data:", error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    fetchAllData()
+  }, [])
 
   const filteredResources = useMemo(() => {
-    return resources.filter((resource) => {
+    return realResources.filter((resource) => {
+      // Course context (from URL)
+      const urlCourse = searchParams.get("course")
+      if (urlCourse && resource.course !== urlCourse) return false
+
       // Search filter
       if (searchQuery) {
         const query = searchQuery.toLowerCase()
         const matchesSearch =
-          resource.title.toLowerCase().includes(query) ||
-          resource.courseCode.toLowerCase().includes(query) ||
-          resource.courseName.toLowerCase().includes(query)
+          resource.resourceTitle.toLowerCase().includes(query) ||
+          resource.course.toLowerCase().includes(query)
         if (!matchesSearch) return false
       }
 
       // Semester filter
-      if (selectedSemester !== "all" && resource.semester !== parseInt(selectedSemester)) {
+      if (selectedSemester !== "all" && resource.semester.toString() !== selectedSemester) {
         return false
       }
 
       // Type filter
-      if (selectedTypes.length > 0 && !selectedTypes.includes(resource.type)) {
+      if (selectedTypes.length > 0 && !selectedTypes.includes(resource.resourceType)) {
         return false
       }
 
       return true
     })
-  }, [searchQuery, selectedSemester, selectedTypes])
+  }, [realResources, searchQuery, selectedSemester, selectedTypes, searchParams])
 
   const handleTypeToggle = (type: string) => {
     setSelectedTypes((prev) =>
@@ -126,9 +156,9 @@ export default function ResourcesPage() {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All Semesters</SelectItem>
-              {semesters.map((sem) => (
-                <SelectItem key={sem.id} value={sem.id.toString()}>
-                  Semester {sem.id}
+              {[1, 2, 3, 4, 5, 6].map((num) => (
+                <SelectItem key={num} value={num.toString()}>
+                  Semester {num}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -188,19 +218,21 @@ export default function ResourcesPage() {
       {/* Resource Grid */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {filteredResources.map((resource) => {
-          const Icon = resourceTypeIcons[resource.type]
+          const Icon = resourceTypeIcons[resource.resourceType as keyof typeof resourceTypeIcons] || FileText
           return (
-            <Card key={resource.id} className="flex flex-col">
+            <Card key={resource._id} className="flex flex-col">
               <CardHeader className="pb-3">
                 <div className="flex items-start justify-between gap-2">
                   <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
                     <Icon className="h-5 w-5 text-primary" />
                   </div>
-                  <Badge variant="secondary">{resourceTypeLabels[resource.type]}</Badge>
+                  <Badge variant="secondary">
+                    {resourceTypeLabels[resource.resourceType as keyof typeof resourceTypeLabels]}
+                  </Badge>
                 </div>
-                <CardTitle className="line-clamp-2 text-base">{resource.title}</CardTitle>
+                <CardTitle className="line-clamp-2 text-base">{resource.resourceTitle}</CardTitle>
                 <CardDescription>
-                  <span className="font-mono">{resource.courseCode}</span> • Semester{" "}
+                  <span className="font-mono">{resource.course}</span> • Semester{" "}
                   {resource.semester}
                 </CardDescription>
               </CardHeader>
@@ -208,11 +240,11 @@ export default function ResourcesPage() {
                 <div className="mb-4 flex flex-wrap gap-3 text-xs text-muted-foreground">
                   <span className="flex items-center gap-1">
                     <HardDrive className="h-3 w-3" />
-                    {resource.fileSize}
+                    Cloud File
                   </span>
                   <span className="flex items-center gap-1">
                     <Calendar className="h-3 w-3" />
-                    {new Date(resource.uploadDate).toLocaleDateString("en-US", {
+                    {new Date(resource.createdAt).toLocaleDateString("en-US", {
                       month: "short",
                       year: "numeric",
                     })}
@@ -223,14 +255,16 @@ export default function ResourcesPage() {
                     variant="outline"
                     size="sm"
                     className="flex-1 gap-1 bg-transparent"
-                    onClick={() => setPreviewResource(resource.id)}
+                    onClick={() => setPreviewResource(resource)}
                   >
                     <Eye className="h-3 w-3" />
                     Preview
                   </Button>
-                  <Button size="sm" className="flex-1 gap-1">
-                    <Download className="h-3 w-3" />
-                    Download
+                  <Button asChild size="sm" className="flex-1 gap-1">
+                    <a href={resource.fileUrl} target="_blank" rel="noopener noreferrer">
+                      <Download className="h-3 w-3" />
+                      View/Save
+                    </a>
                   </Button>
                 </div>
               </CardContent>
@@ -258,25 +292,21 @@ export default function ResourcesPage() {
 
       {/* Preview Modal */}
       <Dialog open={!!previewResource} onOpenChange={() => setPreviewResource(null)}>
-        <DialogContent className="max-w-4xl h-[80vh]">
-          <DialogHeader>
+        <DialogContent className="max-w-4xl h-[85vh] flex flex-col p-6 overflow-hidden">
+          <DialogHeader className="mb-4">
             <DialogTitle>
-              {resources.find((r) => r.id === previewResource)?.title}
+              {previewResource?.resourceTitle}
             </DialogTitle>
             <DialogDescription>
-              {resources.find((r) => r.id === previewResource)?.courseName}
+              {previewResource?.course} • {resourceTypeLabels[previewResource?.resourceType as keyof typeof resourceTypeLabels]}
             </DialogDescription>
           </DialogHeader>
-          <div className="flex-1 rounded-lg border border-border bg-muted/30 flex items-center justify-center">
-            <div className="text-center">
-              <FileText className="mx-auto h-16 w-16 text-muted-foreground/50" />
-              <p className="mt-4 text-muted-foreground">
-                PDF preview would be displayed here
-              </p>
-              <p className="text-sm text-muted-foreground">
-                (In production, this would use a PDF viewer component)
-              </p>
-            </div>
+          <div className="flex-1 w-full h-full rounded-lg border border-border overflow-hidden bg-black">
+             <iframe 
+                src={previewResource?.fileUrl} 
+                className="w-full h-full"
+                title="Resource Preview"
+             />
           </div>
         </DialogContent>
       </Dialog>

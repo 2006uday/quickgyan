@@ -1,35 +1,74 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import Link from "next/link"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { semesters, type Semester } from "@/lib/mock-data"
-import { Search, BookOpen, ChevronRight, GraduationCap } from "lucide-react"
+import { Search, BookOpen, ChevronRight, GraduationCap, Loader2 } from "lucide-react"
 
 export default function CoursesPage() {
   const [searchQuery, setSearchQuery] = useState("")
   const [selectedSemester, setSelectedSemester] = useState<number | null>(null)
+  const [courses, setCourses] = useState<any[]>([])
+  const [resources, setResources] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
 
-  const filteredSemesters = semesters.filter((semester) => {
-    if (selectedSemester && semester.id !== selectedSemester) return false
-    if (!searchQuery) return true
-    
-    return semester.courses.some(
-      (course) =>
-        course.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        course.code.toLowerCase().includes(searchQuery.toLowerCase())
-    )
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const [coursesRes, resourcesRes] = await Promise.all([
+          fetch("http://localhost:8060/courses/get-courses"),
+          fetch("http://localhost:8060/resources/getresource")
+        ])
+        
+        const coursesData = await coursesRes.json()
+        const resourcesData = await resourcesRes.json()
+        
+        if (coursesRes.ok) setCourses(coursesData)
+        if (resourcesRes.ok) setResources(resourcesData.resources || [])
+      } catch (error) {
+        console.error("Failed to fetch dashboard data:", error)
+      } finally {
+        setLoading(false)
+      }
+    }
+    fetchData()
+  }, [])
+
+  const getResourceCount = (courseCode: string) => {
+    return resources.filter(r => r.course === courseCode).length
+  }
+
+  const getSemesterResourceCount = (semNum: number) => {
+    const semCourses = courses.filter(c => c.Semester === semNum)
+    const codes = semCourses.map(c => c["Course Code"])
+    return resources.filter(r => codes.includes(r.course)).length
+  }
+
+  const filteredCourses = courses.filter((course) => {
+    const semMatches = !selectedSemester || course.Semester === selectedSemester
+    const searchMatches = 
+      course["Course Name"].toLowerCase().includes(searchQuery.toLowerCase()) ||
+      course["Course Code"].toLowerCase().includes(searchQuery.toLowerCase())
+    return semMatches && searchMatches
   })
 
-  const getFilteredCourses = (semester: Semester) => {
-    if (!searchQuery) return semester.courses
-    return semester.courses.filter(
-      (course) =>
-        course.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        course.code.toLowerCase().includes(searchQuery.toLowerCase())
+  // Group by semester for the cards below
+  const groupedSemesters = [1, 2, 3, 4, 5, 6].map(semNum => {
+    return {
+      id: semNum,
+      name: `Semester ${semNum}`,
+      courses: filteredCourses.filter(c => c.Semester === semNum)
+    }
+  }).filter(sem => sem.courses.length > 0)
+
+  if (loading) {
+    return (
+      <div className="flex h-[400px] items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
     )
   }
 
@@ -80,8 +119,8 @@ export default function CoursesPage() {
             </div>
             <div>
               <h3 className="font-semibold">Semester {sem}</h3>
-              <p className="text-sm text-muted-foreground">
-                {semesters.find((s) => s.id === sem)?.courses.length || 0} courses
+              <p className="text-sm text-muted-foreground leading-tight">
+                {courses.filter(c => c.Semester === sem).length} courses • {getSemesterResourceCount(sem)} resources
               </p>
             </div>
           </button>
@@ -90,10 +129,7 @@ export default function CoursesPage() {
 
       {/* Course List */}
       <div className="space-y-6">
-        {filteredSemesters.map((semester) => {
-          const courses = getFilteredCourses(semester)
-          if (courses.length === 0) return null
-
+        {groupedSemesters.map((semester) => {
           return (
             <Card key={semester.id}>
               <CardHeader>
@@ -102,15 +138,15 @@ export default function CoursesPage() {
                   <CardTitle>{semester.name}</CardTitle>
                 </div>
                 <CardDescription>
-                  {courses.length} course{courses.length !== 1 ? "s" : ""} available
+                  {semester.courses.length} course{semester.courses.length !== 1 ? "s" : ""} available
                 </CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="divide-y divide-border">
-                  {courses.map((course) => (
+                  {semester.courses.map((course: any) => (
                     <Link
-                      key={course.id}
-                      href={`/dashboard/resources?semester=${semester.id}&course=${course.code}`}
+                      key={course._id}
+                      href={`/dashboard/resources?semester=${semester.id}&course=${course["Course Code"]}`}
                       className="flex items-center gap-4 py-4 transition-colors hover:bg-muted/50 -mx-4 px-4 first:pt-0 last:pb-0"
                     >
                       <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
@@ -119,11 +155,13 @@ export default function CoursesPage() {
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2">
                           <Badge variant="secondary" className="font-mono">
-                            {course.code}
+                            {course["Course Code"]}
                           </Badge>
-                          <Badge variant="outline">{course.credits} credits</Badge>
+                          <Badge variant="outline">
+                            {getResourceCount(course["Course Code"])} Resources
+                          </Badge>
                         </div>
-                        <p className="mt-1 truncate font-medium">{course.name}</p>
+                        <p className="mt-1 truncate font-medium">{course["Course Name"]}</p>
                       </div>
                       <Button variant="ghost" size="icon">
                         <ChevronRight className="h-4 w-4" />
@@ -137,7 +175,7 @@ export default function CoursesPage() {
         })}
       </div>
 
-      {filteredSemesters.length === 0 && (
+      {groupedSemesters.length === 0 && (
         <Card>
           <CardContent className="flex flex-col items-center justify-center py-12">
             <Search className="h-12 w-12 text-muted-foreground/50" />

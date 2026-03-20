@@ -57,6 +57,8 @@ async function getCourses(req: Request, res: Response) {
     }
 }
 
+import Resource from "../resourse/resourse.models";
+
 async function updateCourse(req: Request, res: Response) {
     try {
         console.log("Update Request body:", req.body);
@@ -68,15 +70,32 @@ async function updateCourse(req: Request, res: Response) {
         if (!id || !courseName || !courseCode || !credits || !semester) {
             return res.status(400).json({ message: "All fields are required (courseName, courseCode, credits, semester, id)" })
         }
+
+        // Fetch the old course details to check if the code is changing
+        const oldCourse = await courseSchema.findById(id);
+        if (!oldCourse) {
+            return res.status(404).json({ message: "Course not found" });
+        }
+
+        const oldCode = oldCourse["Course Code"];
+
+        // Update the course
         const course = await courseSchema.findByIdAndUpdate(id, {
             "Course Name": courseName,
             "Course Code": courseCode,
             "Credits": credits,
             "Semester": semester
-        })
-        if (!course) {
-            return res.status(404).json({ message: "Course not found" })
+        });
+
+        // If the code has changed, update any resources that were linked to the old code
+        if (oldCode !== courseCode) {
+            console.log(`Cascade updating resources from ${oldCode} to ${courseCode}`);
+            await Resource.updateMany(
+                { course: oldCode },
+                { course: courseCode }
+            );
         }
+
         return res.status(200).json({ message: "Course updated successfully" })
     } catch (error) {
         console.error("Error in updateCourse:", error);
