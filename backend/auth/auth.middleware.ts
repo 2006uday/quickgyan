@@ -98,7 +98,13 @@ async function lastActiveMiddleware(req: Request, res: Response, next: NextFunct
         if (userId) {
             const user = await User.findByIdAndUpdate(userId, { lastActive: new Date() }, { new: true });
             
-            if (user && user.status === "suspended") {
+            if (!user) {
+                res.clearCookie("accessToken");
+                res.clearCookie("refreshToken");
+                return res.status(401).json({ error: "Unauthorized: User account no longer exists." });
+            }
+            
+            if (user.status === "suspended") {
                 res.clearCookie("accessToken");
                 res.clearCookie("refreshToken");
                 return res.status(403).json({ error: "Your account has been suspended. Please contact the administrator." });

@@ -52,6 +52,7 @@ interface AuthContextType {
   getAllUsers: () => Promise<{ success: boolean; data?: any; error?: string }>
   updateUserStatus: (id: string, status: string) => Promise<{ success: boolean; error?: string }>
   sendAccountStatusEmail: (id: string) => Promise<{ success: boolean; error?: string }>
+  deleteUserByAdmin: (id: string) => Promise<{ success: boolean; error?: string }>
 }
 
 // ---------------------------------------------------------------------------
@@ -444,6 +445,18 @@ export function AuthProvider({ children, initialUser }: { children: ReactNode, i
     }
   }
 
+  const deleteUserByAdmin = async (id: string): Promise<{ success: boolean; error?: string }> => {
+    try {
+      await axios.delete(`${API_BASE}/admin/delete-user`, {
+        ...axiosConfig,
+        data: { id }
+      })
+      return { success: true }
+    } catch (err) {
+      return { success: false, error: extractError(err, "Failed to delete user. Please try again.") }
+    }
+  }
+
   // ---------------------------------------------------------------------------
   // Provider
   // ---------------------------------------------------------------------------
@@ -470,7 +483,8 @@ export function AuthProvider({ children, initialUser }: { children: ReactNode, i
       checkUser,
       verifyOldPassword,
       changePassword,
-      sendAccountStatusEmail
+      sendAccountStatusEmail,
+      deleteUserByAdmin
     }}>
       {children}
     </AuthContext.Provider>

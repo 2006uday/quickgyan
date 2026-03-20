@@ -141,8 +141,8 @@ async function otpPost(req: Request, res: Response) {
         const transporter = nodemailer.createTransport({
             service: "gmail",
             auth: {
-                user: process.env.EMAIL || "ak5884771@gmail.com",
-                pass: process.env.PASSWORD || "fvmf isai vkgs rpwn",
+                user: process.env.EMAIL,
+                pass: process.env.PASSWORD,
             },
         });
 
@@ -263,6 +263,11 @@ async function checkAuth(req: Request, res: Response) {
             return res.status(401).json({ error: "Unauthorized" });
         }
         const data = await User.findById({ _id: decodedToken.id });
+        if (!data) {
+            res.clearCookie("accessToken");
+            res.clearCookie("refreshToken");
+            return res.status(401).json({ error: "User not found or unauthorized" });
+        }
         return res.status(200).json({ message: "User is authorized", user: data });
     } catch (error: any) {
         console.log(error);
@@ -427,7 +432,7 @@ async function sendAccountStatusEmail(req: Request, res: Response) {
         });
 
         const statusLabel = user.status === "suspended" ? "suspended" : "active";
-        
+
         const mailOptions = {
             from: process.env.EMAIL || "ak5884771@gmail.com",
             to: user.email,
@@ -439,8 +444,21 @@ async function sendAccountStatusEmail(req: Request, res: Response) {
         return res.status(200).json({ message: "Status email sent successfully" });
     } catch (error) {
         console.error("Error in sendAccountStatusEmail:", error);
+    }
+}
+
+async function adminDeleteUser(req: Request, res: Response) {
+    try {
+        const { id } = req.body;
+        if (!id) {
+            return res.status(400).json({ error: "User ID is required" });
+        }
+        await User.findByIdAndDelete(id);
+        return res.status(200).json({ message: "User deleted successfully" });
+    } catch (error) {
+        console.error("Error in adminDeleteUser:", error);
         return res.status(500).json({ error: "Internal server error" });
     }
 }
 
-export default { userPost, loginPost, logoutPost, deleteUser, getUserDetails, otpPost, otpVerifyPost, allOtpDelete, checkAuth, updateUserDetails, passwordChange, verifyOldPassword, getAllUsers, getAdminStats, updateUserStatus, statusUpdate, sendAccountStatusEmail };
+export default { userPost, loginPost, logoutPost, deleteUser, getUserDetails, otpPost, otpVerifyPost, allOtpDelete, checkAuth, updateUserDetails, passwordChange, verifyOldPassword, getAllUsers, getAdminStats, updateUserStatus, statusUpdate, sendAccountStatusEmail, adminDeleteUser };

@@ -21,6 +21,7 @@ routes.get('/admin/users', adminMiddleware, lastActiveMiddleware, authController
 routes.get('/admin/stats', adminMiddleware, lastActiveMiddleware, authController.getAdminStats);
 routes.put('/admin/status-update', adminMiddleware, lastActiveMiddleware, authController.updateUserStatus);
 routes.post('/admin/send-email', adminMiddleware, lastActiveMiddleware, authController.sendAccountStatusEmail);
+routes.delete('/admin/delete-user', adminMiddleware, lastActiveMiddleware, authController.adminDeleteUser);
 routes.put('/status-update', lastActiveMiddleware, authController.statusUpdate);
 
 

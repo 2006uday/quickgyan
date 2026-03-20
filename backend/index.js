@@ -3,6 +3,7 @@ import dotenv from "dotenv";
 dotenv.config();
 
 import express from 'express';
+import multer from 'multer';
 import cors from "cors";
 import routes from "./auth/auth.routes.ts";
 import connectDB from "./utils/db.ts";
@@ -36,6 +37,19 @@ app.use('/notifications', notificationRoutes);
 // Health check
 app.get('/', function (req, res) {
     res.send('index');
+});
+
+// Error handling middleware
+app.use((err, req, res, next) => {
+    if (err instanceof multer.MulterError) {
+        if (err.code === "LIMIT_FILE_SIZE") {
+            return res.status(400).json({ error: "File too large. Maximum size is 5MB." });
+        }
+        return res.status(400).json({ error: err.message });
+    } else if (err) {
+        return res.status(500).json({ error: err.message || "Internal server error" });
+    }
+    next();
 });
 
 // Connect to DB then start server

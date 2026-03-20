@@ -57,6 +57,7 @@ export default function AdminResourcesPage() {
   const [realResources, setRealResources] = useState<any[]>([])
   const [coursesFromDb, setCoursesFromDb] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
+  const [fileError, setFileError] = useState<string | null>(null)
 
   const fetchResources = async () => {
     try {
@@ -103,6 +104,10 @@ export default function AdminResourcesPage() {
   )
 
   const handleUpload = async () => {
+    if (fileError) {
+      toast.error(fileError)
+      return
+    }
     if (!selectedFile || !uploadForm.title || !uploadForm.type || !uploadForm.semester || !uploadForm.course) {
       alert("Please fill in all fields and select a file")
       return
@@ -144,6 +149,10 @@ export default function AdminResourcesPage() {
   }
 
   const handleUpdate = async () => {
+    if (fileError) {
+      toast.error(fileError)
+      return
+    }
     if (!editingResource || !uploadForm.title || !uploadForm.type || !uploadForm.semester || !uploadForm.course) {
       alert("Please fill in all fields")
       return
@@ -200,7 +209,7 @@ export default function AdminResourcesPage() {
         const data = await response.json()
         throw new Error(data.error || "Failed to delete resource")
       }
-      
+
       fetchResources()
       return "file has been delete successfully"
     }
@@ -320,7 +329,7 @@ export default function AdminResourcesPage() {
 
               <div className="space-y-2">
                 <Label>File Upload</Label>
-                <div 
+                <div
                   className="flex cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed border-border p-8 transition-colors hover:border-primary/50 hover:bg-muted/30"
                   onClick={() => document.getElementById('file-upload')?.click()}
                 >
@@ -335,7 +344,15 @@ export default function AdminResourcesPage() {
                     id="file-upload"
                     type="file"
                     className="hidden"
-                    onChange={(e) => setSelectedFile(e.target.files?.[0] || null)}
+                    onChange={(e) => {
+                      const file = e.target.files?.[0] || null
+                      setSelectedFile(file)
+                      if (file && file.size > 10 * 1024 * 1024) {
+                        setFileError("File is too large! Maximum allowed size is 10MB.")
+                      } else {
+                        setFileError(null)
+                      }
+                    }}
                     accept=".pdf,image/*"
                   />
                   {!selectedFile && (
@@ -344,13 +361,17 @@ export default function AdminResourcesPage() {
                     </Button>
                   )}
                 </div>
+                {fileError && <p className="text-xs font-medium text-destructive mt-1 text-center">{fileError}</p>}
               </div>
             </div>
             <div className="flex justify-end gap-2">
-              <Button variant="outline" onClick={() => setIsUploadOpen(false)}>
+              <Button variant="outline" onClick={() => {
+                setIsUploadOpen(false)
+                setFileError(null)
+              }}>
                 Cancel
               </Button>
-              <Button onClick={handleUpload} disabled={isUploading}>
+              <Button onClick={handleUpload} disabled={isUploading || !!fileError}>
                 {isUploading ? "Uploading..." : "Upload Resource"}
               </Button>
             </div>
@@ -448,7 +469,7 @@ export default function AdminResourcesPage() {
 
               <div className="space-y-2">
                 <Label>Replace File (Optional)</Label>
-                <div 
+                <div
                   className="flex cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed border-border p-4 transition-colors hover:border-primary/50 hover:bg-muted/30"
                   onClick={() => document.getElementById('edit-file-upload')?.click()}
                 >
@@ -460,17 +481,29 @@ export default function AdminResourcesPage() {
                     id="edit-file-upload"
                     type="file"
                     className="hidden"
-                    onChange={(e) => setSelectedFile(e.target.files?.[0] || null)}
+                    onChange={(e) => {
+                      const file = e.target.files?.[0] || null
+                      setSelectedFile(file)
+                      if (file && file.size > 5 * 1024 * 1024) {
+                        setFileError("File is too large! Maximum allowed size is 5MB.")
+                      } else {
+                        setFileError(null)
+                      }
+                    }}
                     accept=".pdf,image/*"
                   />
                 </div>
+                {fileError && <p className="text-xs font-medium text-destructive mt-1 text-center">{fileError}</p>}
               </div>
             </div>
             <div className="flex justify-end gap-2">
-              <Button variant="outline" onClick={() => setIsEditOpen(false)}>
+              <Button variant="outline" onClick={() => {
+                setIsEditOpen(false)
+                setFileError(null)
+              }}>
                 Cancel
               </Button>
-              <Button onClick={handleUpdate} disabled={isUploading}>
+              <Button onClick={handleUpdate} disabled={isUploading || !!fileError}>
                 {isUploading ? "Updating..." : "Update Resource"}
               </Button>
             </div>
@@ -528,9 +561,9 @@ export default function AdminResourcesPage() {
                     <TableCell>
                       <div className="flex items-center gap-2">
                         <FileText className="h-4 w-4 text-muted-foreground" />
-                        <a 
-                          href={resource.fileUrl} 
-                          target="_blank" 
+                        <a
+                          href={resource.fileUrl}
+                          target="_blank"
                           rel="noopener noreferrer"
                           className="max-w-[200px] truncate font-medium hover:underline hover:text-primary"
                         >
@@ -552,8 +585,8 @@ export default function AdminResourcesPage() {
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-2">
-                        <Button 
-                          variant="ghost" 
+                        <Button
+                          variant="ghost"
                           size="icon"
                           onClick={() => {
                             setEditingResource(resource)
@@ -568,9 +601,9 @@ export default function AdminResourcesPage() {
                         >
                           <Pencil className="h-4 w-4" />
                         </Button>
-                        <Button 
-                          variant="ghost" 
-                          size="icon" 
+                        <Button
+                          variant="ghost"
+                          size="icon"
                           className="text-destructive"
                           onClick={() => handleDelete(resource._id)}
                         >

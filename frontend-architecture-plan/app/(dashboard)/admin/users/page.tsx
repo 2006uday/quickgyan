@@ -45,7 +45,7 @@ import {
 
 
 export default function AdminUsersPage() {
-  const { getAllUsers, updateUserStatus, sendAccountStatusEmail } = useAuth()
+  const { getAllUsers, updateUserStatus, sendAccountStatusEmail, deleteUserByAdmin } = useAuth()
   const [users, setUsers] = useState<any[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState("")
@@ -74,9 +74,18 @@ export default function AdminUsersPage() {
       (user.enrollment_no || user.enrollmentNo || "").toString().includes(searchQuery)
   )
 
-  const handleDeleteUser = () => {
-    console.log("Deleting user:", deleteUserId)
-    setDeleteUserId(null)
+  const handleDeleteUser = async () => {
+    if (!deleteUserId) return;
+
+    const res = await deleteUserByAdmin(deleteUserId);
+    setDeleteUserId(null);
+
+    if (res.success) {
+      setSuccessMessage("User has been successfully deleted");
+      fetchUsers();
+    } else {
+      setErrorMessage(res.error || "Failed to delete user");
+    }
   }
 
   return (
@@ -273,7 +282,7 @@ export default function AdminUsersPage() {
             <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-destructive/10 mb-4">
               <Ban className="h-6 w-6 text-destructive" />
             </div>
-            <AlertDialogTitle className="text-center text-destructive">Failed to Send Email</AlertDialogTitle>
+            <AlertDialogTitle className="text-center text-destructive">Action Failed</AlertDialogTitle>
             <AlertDialogDescription className="text-center">
               {errorMessage}
             </AlertDialogDescription>
@@ -296,7 +305,7 @@ export default function AdminUsersPage() {
             <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 mb-4">
               <Mail className="h-6 w-6 text-primary" />
             </div>
-            <AlertDialogTitle className="text-center">Email Sent Successfully</AlertDialogTitle>
+            <AlertDialogTitle className="text-center">Action Successful</AlertDialogTitle>
             <AlertDialogDescription className="text-center">
               {successMessage}
             </AlertDialogDescription>
@@ -326,7 +335,7 @@ export default function AdminUsersPage() {
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDeleteUser}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              className="bg-destructive text-white hover:bg-destructive/90"
             >
               Delete
             </AlertDialogAction>
