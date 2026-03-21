@@ -1,9 +1,9 @@
-import Announcement from "./announcement.models";
-import { Request, Response } from "express";
-import { User } from "../auth/auth.model";
-import Notification from "../notifications/notification.models";
+import Announcement from './announcement.models.js';
 
-async function createBulkNotifications(announcementTitle: string, announcementContent: string) {
+import { User } from '../auth/auth.model.js';
+import Notification from '../notifications/notification.models.js';
+
+async function createBulkNotifications(announcementTitle, announcementContent) {
     try {
         const users = await User.find({ status: "active" }, "_id");
         if (users.length === 0) return;
@@ -22,7 +22,7 @@ async function createBulkNotifications(announcementTitle: string, announcementCo
     }
 }
 
-export const addAnnouncement = async (req: any, res: any) => {
+export const addAnnouncement = async (req, res) => {
     try {
         const { title, content } = req.body;
         if (!title || !content) {
@@ -35,23 +35,23 @@ export const addAnnouncement = async (req: any, res: any) => {
         createBulkNotifications(title, content);
 
         return res.status(200).json({ message: "Announcement added successfully", announcement: newAnnouncement });
-    } catch (error: any) {
+    } catch (error) {
         console.error("Add announcement error:", error);
         return res.status(500).json({ error: error.message || "Internal server error" });
     }
 };
 
-export const getAnnouncements = async (req: any, res: any) => {
+export const getAnnouncements = async (req, res) => {
     try {
         const announcements = await Announcement.find().sort({ date: -1 });
         return res.status(200).json(announcements);
-    } catch (error: any) {
+    } catch (error) {
         console.error("Get announcements error:", error);
         return res.status(500).json({ error: error.message || "Internal server error" });
     }
 };
 
-export const deleteAnnouncement = async (req: any, res: any) => {
+export const deleteAnnouncement = async (req, res) => {
     try {
         const { id } = req.params;
         const deleted = await Announcement.findByIdAndDelete(id);
@@ -59,7 +59,7 @@ export const deleteAnnouncement = async (req: any, res: any) => {
             return res.status(404).json({ error: "Announcement not found" });
         }
         return res.status(200).json({ message: "Announcement deleted successfully" });
-    } catch (error: any) {
+    } catch (error) {
         console.error("Delete announcement error:", error);
         return res.status(500).json({ error: error.message || "Internal server error" });
     }

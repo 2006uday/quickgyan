@@ -1,13 +1,6 @@
 import mongoose from "mongoose";
 
-interface IChatMessage {
-    userId: mongoose.Types.ObjectId;
-    role: "user" | "assistant";
-    content: string;
-    createdAt: Date;
-}
-
-const chatMessageSchema = new mongoose.Schema<IChatMessage>({
+const chatMessageSchema = new mongoose.Schema({
     userId: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'users',
@@ -15,7 +8,7 @@ const chatMessageSchema = new mongoose.Schema<IChatMessage>({
     },
     role: {
         type: String,
-        enum: ["user", "assistant"],
+        enum: ['user', 'model', 'system'],
         required: true
     },
     content: {
@@ -29,4 +22,4 @@ const chatMessageSchema = new mongoose.Schema<IChatMessage>({
     }
 });
 
-export default mongoose.model<IChatMessage>("ChatMessages", chatMessageSchema);
+export default mongoose.model("ChatMessages", chatMessageSchema);

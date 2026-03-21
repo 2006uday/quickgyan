@@ -1,13 +1,6 @@
 import mongoose from "mongoose"
 
-interface ICourse {
-  "Course Code": string;
-  "Course Name": string;
-  "Credits": number;
-  "Semester": number;
-}
-
-const courseSchema = new mongoose.Schema<ICourse>(
+const courseSchema = new mongoose.Schema(
     {
         "Course Code": {
             type: String,
@@ -25,7 +18,7 @@ const courseSchema = new mongoose.Schema<ICourse>(
             required: true
         },
         "Semester": {
-            type: Number,
+            type: String,
             required: true
         }
     }

@@ -1,17 +1,6 @@
 import mongoose from "mongoose";
 
-interface IResource {
-    resourceTitle: string;
-    resourceType: string;
-    semester: string;
-    course: string;
-    fileUrl: string;
-    publicId: string;
-    cloudinaryResourceType: string; // To track if it's image/raw etc.
-    createdAt: Date;
-}
-
-const resourceSchema = new mongoose.Schema<IResource>({
+const resourceSchema = new mongoose.Schema({
     resourceTitle: {
         type: String,
         required: true,
@@ -48,4 +37,4 @@ const resourceSchema = new mongoose.Schema<IResource>({
     }
 });
 
-export default mongoose.model<IResource>("Resources", resourceSchema);
+export default mongoose.model("Resources", resourceSchema);

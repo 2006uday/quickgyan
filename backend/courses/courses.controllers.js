@@ -1,9 +1,9 @@
-import courseSchema from "./courses.models";
-import { Request, Response } from "express";
-import { User } from "../auth/auth.model";
-import Notification from "../notifications/notification.models";
+import courseSchema from './courses.models.js';
 
-async function createCourseNotifications(courseNames: string[]) {
+import { User } from '../auth/auth.model.js';
+import Notification from '../notifications/notification.models.js';
+
+async function createCourseNotifications(courseNames) {
     try {
         const users = await User.find({ status: "active" }, "_id");
         if (users.length === 0) return;
@@ -12,7 +12,7 @@ async function createCourseNotifications(courseNames: string[]) {
             courseNames.map(name => ({
                 userId: user._id,
                 title: "New Course Added",
-                message: `An exciting new course "${name}" has been added to the curriculum. Check it out!`,
+                message: `An exciting new course "${name}" has been added to the curriculum. Check it out`,
                 type: "info"
             }))
         );
@@ -40,7 +40,7 @@ async function createCourseNotifications(courseNames: string[]) {
 }
 
 // add courses data
-async function addCourse(req: any, res: any) {
+async function addCourse(req, res) {
     try {
         console.log("Incoming request body:", req.body);
 
@@ -78,7 +78,7 @@ async function addCourse(req: any, res: any) {
             message: `${result.length} course(s) added successfully`,
             data: result
         });
-    } catch (error: any) {
+    } catch (error) {
         console.error("Error in addCourse:", error);
         if (error.code === 11000) {
             return res.status(400).json({ message: "One or more Course Codes already exist" });
@@ -88,7 +88,7 @@ async function addCourse(req: any, res: any) {
 }
 
 // get courses data
-async function getCourses(req: any, res: any) {
+async function getCourses(req, res) {
     try {
         const courses = await courseSchema.find();
         return res.status(200).json(courses);
@@ -98,9 +98,9 @@ async function getCourses(req: any, res: any) {
     }
 }
 
-import Resource from "../resourse/resourse.models";
+import Resource from '../resourse/resourse.models.js';
 
-async function updateCourse(req: any, res: any) {
+async function updateCourse(req, res) {
     try {
         console.log("Update Request body:", req.body);
         const body = req.body;
@@ -108,7 +108,7 @@ async function updateCourse(req: any, res: any) {
             return res.status(400).json({ message: "Request body is required" })
         }
         const { courseName, courseCode, credits, semester, id } = body;
-        if (!id || !courseName || !courseCode || !credits || !semester) {
+        if (id || courseName || courseCode || credits || semester) {
             return res.status(400).json({ message: "All fields are required (courseName, courseCode, credits, semester, id)" })
         }
 
@@ -144,7 +144,7 @@ async function updateCourse(req: any, res: any) {
     }
 }
 
-async function deleteCourse(req: any, res: any) {
+async function deleteCourse(req, res) {
     try {
         console.log("Delete Request body:", req.body);
         const body = Array.isArray(req.body) ? req.body[0] : req.body;

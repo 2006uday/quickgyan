@@ -1,6 +1,6 @@
-import { Request, Response } from "express";
+
 import bcrypt from "bcrypt";
-import { User, Otp } from "./auth.model";
+import { User, Otp } from './auth.model.js';
 import jwt from "jsonwebtoken";
 import dotenv from "dotenv";
 import nodemailer from "nodemailer";
@@ -9,7 +9,7 @@ dotenv.config();
 const JWT_SECRET = process.env.JWT_SECRET;
 if (!JWT_SECRET) throw new Error("JWT_SECRET is not defined in .env");
 
-async function userPost(req: any, res: any) {
+async function userPost(req, res) {
     console.log("userPost : ", req.body);
 
     try {
@@ -52,13 +52,13 @@ async function userPost(req: any, res: any) {
                 lastActive: user.lastActive,
             },
         });
-    } catch (error: any) {
+    } catch (error) {
         console.log(error);
         return res.status(500).json({ error: "Internal server error" });
     }
 }
 
-async function loginPost(req: any, res: any) {
+async function loginPost(req, res) {
     console.log("loginPost : ", req.body);
     try {
 
@@ -88,9 +88,9 @@ async function loginPost(req: any, res: any) {
             role: user.role,
         };
 
-        const accessToken = jwt.sign(payload, JWT_SECRET!, { expiresIn: "1d" });
+        const accessToken = jwt.sign(payload, JWT_SECRET, { expiresIn: "1d" });
 
-        const refreshToken = jwt.sign(payload, JWT_SECRET!, { expiresIn: "7d" });
+        const refreshToken = jwt.sign(payload, JWT_SECRET, { expiresIn: "7d" });
 
         const refreshTokenStore = await User.updateOne({ _id: user._id }, { $push: { refreshToken: refreshToken } });
 
@@ -114,14 +114,14 @@ async function loginPost(req: any, res: any) {
                 lastActive: user.lastActive,
             },
         });
-    } catch (error: any) {
+    } catch (error) {
 
         console.log(error);
         return res.status(500).json({ error: "Internal server error" });
     }
 }
 
-async function otpPost(req: any, res: any) {
+async function otpPost(req, res) {
     try {
         const { email } = req.body;
         const otp = Math.floor(100000 + Math.random() * 900000);
@@ -148,12 +148,12 @@ async function otpPost(req: any, res: any) {
 
         const mailOptions = {
             from: process.env.EMAIL,
-            to: email,
+            to,
             subject: "OTP for login",
             text: `Your OTP is ${otp}`,
         };
 
-        transporter.sendMail(mailOptions, (error: any, info: { response: string; }) => {
+        transporter.sendMail(mailOptions, (error, info) => {
             if (error) {
                 console.log(error);
                 return res.status(500).json({ error: "Internal server error" });
@@ -162,13 +162,13 @@ async function otpPost(req: any, res: any) {
         });
 
         return res.status(200).json({ message: "OTP sent successfully" });
-    } catch (error: any) {
+    } catch (error) {
         console.log(error);
         return res.status(500).json({ error: "Internal server error" });
     }
 }
 
-async function otpVerifyPost(req: any, res: any) {
+async function otpVerifyPost(req, res) {
     try {
         const { email, otp } = req.body;
 
@@ -195,23 +195,23 @@ async function otpVerifyPost(req: any, res: any) {
         await Otp.deleteOne({ email });
 
         return res.status(200).json({ message: "OTP verified successfully" });
-    } catch (error: any) {
+    } catch (error) {
         console.log(error);
         return res.status(500).json({ error: "Internal server error" });
     }
 }
 
-async function allOtpDelete(req: any, res: any) {
+async function allOtpDelete(req, res) {
     try {
         const otpStore = await Otp.deleteMany({});
         return res.status(200).json({ message: "All OTPs deleted successfully" });
-    } catch (error: any) {
+    } catch (error) {
         console.log(error);
         return res.status(500).json({ error: "Internal server error" });
     }
 }
 
-async function logoutPost(req: any, res: any) {
+async function logoutPost(req, res) {
     console.log("logoutPost");
     try {
         res.clearCookie("accessToken");
@@ -221,13 +221,13 @@ async function logoutPost(req: any, res: any) {
 
         console.log("User logged out successfully");
         return res.status(200).json({ message: "User logged out successfully" });
-    } catch (error: any) {
+    } catch (error) {
         console.log(error);
         return res.status(500).json({ error: "Internal server error" });
     }
 }
 
-async function deleteUser(req: any, res: any) {
+async function deleteUser(req, res) {
     console.log("deleteUser : ", req.params);
     try {
 
@@ -237,27 +237,27 @@ async function deleteUser(req: any, res: any) {
         res.clearCookie("accessToken");
         res.clearCookie("refreshToken");
         return res.status(200).json({ message: "User deleted successfully" });
-    } catch (error: any) {
+    } catch (error) {
         console.log(error);
         return res.status(500).json({ error: "Internal server error" });
     }
 }
 
-async function getUserDetails(req: any, res: any) {
+async function getUserDetails(req, res) {
     try {
         const details = req.cookies.accessToken;
-        const decodedToken = jwt.verify(details, JWT_SECRET!) as jwt.JwtPayload;
+        const decodedToken = jwt.verify(details, JWT_SECRET) ;
         return res.status(200).json({ message: "User details fetched successfully", user: decodedToken });
-    } catch (error: any) {
+    } catch (error) {
         console.log(error);
         return res.status(500).json({ error: "Internal server error" });
     }
 }
 
-async function checkAuth(req: any, res: any) {
+async function checkAuth(req, res) {
     try {
         const token = req.cookies.accessToken;
-        const decodedToken = jwt.verify(token, JWT_SECRET!) as jwt.JwtPayload;
+        const decodedToken = jwt.verify(token, JWT_SECRET) ;
         // console.log("decodedToken : ", decodedToken);
         if (!decodedToken) {
             return res.status(401).json({ error: "Unauthorized" });
@@ -269,13 +269,13 @@ async function checkAuth(req: any, res: any) {
             return res.status(401).json({ error: "User not found or unauthorized" });
         }
         return res.status(200).json({ message: "User is authorized", user: data });
-    } catch (error: any) {
+    } catch (error) {
         console.log(error);
         return res.status(500).json({ error: "Internal server error" });
     }
 }
 
-async function updateUserDetails(req: any, res: any) {
+async function updateUserDetails(req, res) {
     try {
         console.log("req.body : ", req.body);
 
@@ -290,7 +290,7 @@ async function updateUserDetails(req: any, res: any) {
         const finalUsername = username || name;
         const finalEnrollmentNo = enrollment_no || enrollmentNo;
 
-        const updateData: any = {};
+        const updateData = {};
         if (finalUsername) updateData.username = finalUsername;
         if (email) updateData.email = email;
         if (dob) updateData.dob = dob;
@@ -301,13 +301,13 @@ async function updateUserDetails(req: any, res: any) {
             return res.status(200).json({ message: "User details updated successfully", user });
         }
         return res.status(400).json({ error: "No update details provided" });
-    } catch (error: any) {
+    } catch (error) {
         console.log(error);
         return res.status(500).json({ error: "Internal server error" });
     }
 }
 
-async function verifyOldPassword(req: any, res: any) {
+async function verifyOldPassword(req, res) {
     try {
         const id = req.id;
         const { oldPassword } = req.body;
@@ -327,13 +327,13 @@ async function verifyOldPassword(req: any, res: any) {
         }
 
         return res.status(200).json({ message: "Old password verified", email: user.email });
-    } catch (error: any) {
+    } catch (error) {
         console.log(error);
         return res.status(500).json({ error: "Internal server error" });
     }
 }
 
-async function passwordChange(req: any, res: any) {
+async function passwordChange(req, res) {
     try {
         const id = req.id;
         const { newPassword } = req.body;
@@ -346,13 +346,13 @@ async function passwordChange(req: any, res: any) {
         const user = await User.findByIdAndUpdate(id, { $set: { password: hashPassword } }, { new: true });
         return res.status(200).json({ message: "Password changed successfully" });
 
-    } catch (error: any) {
+    } catch (error) {
         console.log(error);
         return res.status(500).json({ error: "Internal server error" });
     }
 }
 
-async function getAllUsers(req: any, res: any) {
+async function getAllUsers(req, res) {
     try {
         const users = await User.find({}, { password: 0, refreshToken: 0 }); // Exclude sensitive fields
         return res.status(200).json(users);
@@ -362,7 +362,7 @@ async function getAllUsers(req: any, res: any) {
     }
 }
 
-async function getAdminStats(req: any, res: any) {
+async function getAdminStats(req, res) {
     try {
         const totalUsers = await User.countDocuments();
         const activeThreshold = new Date(Date.now() - 5 * 60 * 1000); // Active in last 5 minutes
@@ -378,7 +378,7 @@ async function getAdminStats(req: any, res: any) {
     }
 }
 
-async function updateUserStatus(req: any, res: any) {
+async function updateUserStatus(req, res) {
     try {
         const { id, status } = req.body;
         if (!id || !status) {
@@ -392,7 +392,7 @@ async function updateUserStatus(req: any, res: any) {
     }
 }
 
-async function statusUpdate(req: any, res: any) {
+async function statusUpdate(req, res) {
     try {
         const { id, status } = req.body;
         if (!id || !status) {
@@ -411,7 +411,7 @@ async function statusUpdate(req: any, res: any) {
     }
 }
 
-async function sendAccountStatusEmail(req: any, res: any) {
+async function sendAccountStatusEmail(req, res) {
     try {
         const { id } = req.body;
         if (!id) {
@@ -447,7 +447,7 @@ async function sendAccountStatusEmail(req: any, res: any) {
     }
 }
 
-async function adminDeleteUser(req: any, res: any) {
+async function adminDeleteUser(req, res) {
     try {
         const { id } = req.body;
         if (!id) {

@@ -1,16 +1,16 @@
 import multer from 'multer';
 import { v2 as cloudinary } from 'cloudinary';
-import { Request, Response } from 'express';
+
 import { Readable } from 'stream';
 import dotenv from 'dotenv';
 
 dotenv.config();
 
-import Resource from "./resourse.models";
-import { User } from "../auth/auth.model";
-import Notification from "../notifications/notification.models";
+import Resource from './resourse.models.js';
+import { User } from '../auth/auth.model.js';
+import Notification from '../notifications/notification.models.js';
 
-async function createBulkNotifications(resourceTitle: string, resourceType: string, course: string) {
+async function createBulkNotifications(resourceTitle, resourceType, course) {
     try {
         const users = await User.find({ status: "active" }, "_id");
         if (users.length === 0) return;
@@ -29,7 +29,7 @@ async function createBulkNotifications(resourceTitle: string, resourceType: stri
     }
 }
 
-async function uploadResourse(req: any, res: any) { // Using 'any' for 'req' to avoid 'file is possibly undefined' error
+async function uploadResourse(req, res) { // Using 'any' for 'req' to avoid 'file is possibly undefined' error
     try {
         const { resourceTitle, resourceType, semester, course } = req.body;
 
@@ -47,7 +47,7 @@ async function uploadResourse(req: any, res: any) { // Using 'any' for 'req' to 
 
         // Upload to Cloudinary
         const result = await cloudinary.uploader.upload(dataURI, {
-            folder: folderName,
+            folder,
             resource_type: "auto",
         });
 
@@ -69,11 +69,11 @@ async function uploadResourse(req: any, res: any) { // Using 'any' for 'req' to 
 
         return res.status(200).json({
             message: "Resource uploaded and saved successfully",
-            result: result,
+            result,
             resource: newResource
         });
     }
-    catch (error: any) {
+    catch (error) {
         console.error("Upload error:", error);
         return res.status(error.http_code || 500).json({
             error: error.message || "Internal server error",
@@ -81,19 +81,19 @@ async function uploadResourse(req: any, res: any) { // Using 'any' for 'req' to 
         });
     }
 }
-async function getResource(req: any, res: any) {
+async function getResource(req, res) {
     try {
         const resources = await Resource.find().sort({ createdAt: -1 });
         return res.status(200).json({ resources });
     }
-    catch (error: any) {
+    catch (error) {
         console.error("Get resources error:", error);
         return res.status(error.http_code || 500).json({
             error: error.message || "Internal server error"
         });
     }
 }
-async function updateResource(req: any, res: any) {
+async function updateResource(req, res) {
     try {
         const { id, resourceTitle, resourceType, semester, course } = req.body;
         if (!id) {
@@ -101,11 +101,9 @@ async function updateResource(req: any, res: any) {
         }
 
         const existingResource = await Resource.findById(id);
-        if (!existingResource) {
-            return res.status(404).json({ error: "Resource not found" });
-        }
+        if (!existingResource) { return res.status(404).json({ error: "Resource not found" }); }
 
-        let updateData: any = {
+        let updateData = {
             resourceTitle,
             resourceType,
             semester,
@@ -127,7 +125,7 @@ async function updateResource(req: any, res: any) {
             const dataURI = "data:" + req.file.mimetype + ";base64," + b64;
 
             const result = await cloudinary.uploader.upload(dataURI, {
-                folder: folderName,
+                folder,
                 resource_type: "auto",
             });
 
@@ -142,13 +140,13 @@ async function updateResource(req: any, res: any) {
             message: "Resource updated successfully",
             resource: updatedResource
         });
-    } catch (error: any) {
+    } catch (error) {
         console.error("Update resource error:", error);
         return res.status(500).json({ error: "Internal server error" });
     }
 }
 
-async function deleteResource(req: any, res: any) {
+async function deleteResource(req, res) {
     try {
         const { id } = req.body;
         if (!id) {
@@ -156,14 +154,12 @@ async function deleteResource(req: any, res: any) {
         }
 
         const resource = await Resource.findById(id);
-        if (!resource) {
-            return res.status(404).json({ error: "Resource not found" });
-        }
+        if (!resource) { return res.status(404).json({ error: "Resource not found" }); }
 
         // Delete from Cloudinary using the correct resource type
         if (resource.publicId) {
             await cloudinary.uploader.destroy(resource.publicId, {
-                resource_type: (resource as any).cloudinaryResourceType || "image"
+                resource_type: (resource).cloudinaryResourceType || "image"
             });
         }
 
@@ -171,7 +167,7 @@ async function deleteResource(req: any, res: any) {
         await Resource.findByIdAndDelete(id);
 
         return res.status(200).json({ message: "Resource deleted successfully" });
-    } catch (error: any) {
+    } catch (error) {
         console.error("Delete resource error:", error);
         return res.status(500).json({ error: "Internal server error" });
     }

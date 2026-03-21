@@ -1,12 +1,10 @@
-import { Request, Response } from "express";
-import Notification from "./notification.models";
 
-async function getNotifications(req: any, res: any) {
+import Notification from './notification.models.js';
+
+async function getNotifications(req, res) {
     try {
         const userId = req.user.id;
-        if (!userId) {
-            return res.status(401).json({ error: "Unauthorized" });
-        }
+        if (!userId) { return res.status(401).json({ error: "Unauthorized" }); }
 
         const notifications = await Notification.find({ userId })
             .sort({ createdAt: -1 })
@@ -19,7 +17,7 @@ async function getNotifications(req: any, res: any) {
     }
 }
 
-async function markAsRead(req: any, res: any) {
+async function markAsRead(req, res) {
     try {
         const { id } = req.body;
         if (!id) {

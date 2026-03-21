@@ -1,12 +1,6 @@
 import mongoose from "mongoose";
 
-interface IAnnouncement {
-    title: string;
-    content: string;
-    date: Date;
-}
-
-const announcementSchema = new mongoose.Schema<IAnnouncement>({
+const announcementSchema = new mongoose.Schema({
     title: {
         type: String,
         required: true
@@ -22,4 +16,4 @@ const announcementSchema = new mongoose.Schema<IAnnouncement>({
     }
 });
 
-export default mongoose.model<IAnnouncement>("Announcement", announcementSchema);
+export default mongoose.model("Announcement", announcementSchema);

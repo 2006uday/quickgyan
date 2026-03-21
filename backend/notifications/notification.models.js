@@ -1,15 +1,6 @@
 import mongoose from "mongoose";
 
-interface INotification {
-    userId: mongoose.Types.ObjectId;
-    title: string;
-    message: string;
-    type: string;
-    isRead: boolean;
-    createdAt: Date;
-}
-
-const notificationSchema = new mongoose.Schema<INotification>({
+const notificationSchema = new mongoose.Schema({
     userId: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'users',
@@ -38,4 +29,4 @@ const notificationSchema = new mongoose.Schema<INotification>({
     }
 });
 
-export default mongoose.model<INotification>("Notifications", notificationSchema);
+export default mongoose.model("Notifications", notificationSchema);

@@ -1,18 +1,6 @@
 import mongoose from 'mongoose';
 
-type User = {
-    username: string;
-    password: string;
-    email: string;
-    dob: Date;
-    role: string;
-    refreshToken: string[];
-    enrollment_no: Number;
-    status: string;
-    lastActive: Date;
-}
-
-const UserSchema = new mongoose.Schema<User>(
+const UserSchema = new mongoose.Schema(
     {
         username:
         {
@@ -67,14 +55,8 @@ const UserSchema = new mongoose.Schema<User>(
         timestamps: true
     }
 )
-type OtpType = {
-    email: string;
-    otp: number;
-    expiresAt: Date;
-    status: string;
-}
 
-const OtpSchema = new mongoose.Schema<OtpType>(
+const OtpSchema = new mongoose.Schema(
     {
         email: {
             type: String,

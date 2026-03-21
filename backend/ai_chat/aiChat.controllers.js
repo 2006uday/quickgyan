@@ -1,8 +1,8 @@
-import { Request, Response } from "express";
-import { GoogleGenAI } from "@google/genai";
-import ChatMessage from "./aiChat.models";
 
-export const askAI = async (req: any, res: any) => {
+import { GoogleGenAI } from "@google/genai";
+import ChatMessage from './aiChat.models.js';
+
+export const askAI = async (req, res) => {
     try {
         const { message } = req.body;
         const userId = req.user?.id;
@@ -54,40 +54,36 @@ export const askAI = async (req: any, res: any) => {
 
         res.json({ response: aiResponse });
     }
-    catch (error: any) {
+    catch (error) {
         console.error("AI Chat Error:", error);
         res.status(500).json({ error: error.message || "Failed to get AI response" });
     }
 };
 
-export const getHistory = async (req: any, res: any) => {
+export const getHistory = async (req, res) => {
     try {
         const userId = req.user?.id;
-        if (!userId) {
-            return res.status(401).json({ error: "Unauthorized" });
-        }
+        if (!userId) { return res.status(401).json({ error: "Unauthorized" }); }
 
         const messages = await ChatMessage.find({ userId })
             .sort({ createdAt: 1 })
             .limit(50); // Limit to last 50 messages for performance
 
         res.json({ messages });
-    } catch (error: any) {
+    } catch (error) {
         console.error("Fetch History Error:", error);
         res.status(500).json({ error: "Internal server error" });
     }
 };
 
-export const clearHistory = async (req: any, res: any) => {
+export const clearHistory = async (req, res) => {
     try {
         const userId = req.user?.id;
-        if (!userId) {
-            return res.status(401).json({ error: "Unauthorized" });
-        }
+        if (!userId) { return res.status(401).json({ error: "Unauthorized" }); }
 
         await ChatMessage.deleteMany({ userId });
         res.json({ message: "Chat history cleared" });
-    } catch (error: any) {
+    } catch (error) {
         console.error("Clear History Error:", error);
         res.status(500).json({ error: "Internal server error" });
     }
