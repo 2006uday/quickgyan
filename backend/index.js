@@ -21,7 +21,7 @@ const PORT = process.env.PORT || 8060;
 app.use(cookieParser());
 app.use(
     cors({
-        origin: ["http://localhost:3000"],
+        origin: [process.env.FRONTEND_URL || "http://localhost:3000"],
         credentials: true,
     })
 );
@@ -54,9 +54,21 @@ app.use((err, req, res, next) => {
     next();
 });
 
-// Connect to DB then start server
-connectDB().then(() => {
-    app.listen(PORT, () => {
-        console.log(`Server started on port ${PORT}`);
-    });
-});
+// Connect to DB then start server or export for Vercel
+let isConnected = false;
+const startServer = async () => {
+    if (!isConnected) {
+        await connectDB();
+        isConnected = true;
+    }
+
+    if (process.env.NODE_ENV !== 'production' || !process.env.VERCEL) {
+        app.listen(PORT, () => {
+            console.log(`Server started on port ${PORT}`);
+        });
+    }
+};
+
+startServer();
+
+export default app;
