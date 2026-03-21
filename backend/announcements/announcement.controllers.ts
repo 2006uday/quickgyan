@@ -22,7 +22,7 @@ async function createBulkNotifications(announcementTitle: string, announcementCo
     }
 }
 
-export const addAnnouncement = async (req: Request, res: Response) => {
+export const addAnnouncement = async (req: any, res: any) => {
     try {
         const { title, content } = req.body;
         if (!title || !content) {
@@ -41,7 +41,7 @@ export const addAnnouncement = async (req: Request, res: Response) => {
     }
 };
 
-export const getAnnouncements = async (req: Request, res: Response) => {
+export const getAnnouncements = async (req: any, res: any) => {
     try {
         const announcements = await Announcement.find().sort({ date: -1 });
         return res.status(200).json(announcements);
@@ -51,7 +51,7 @@ export const getAnnouncements = async (req: Request, res: Response) => {
     }
 };
 
-export const deleteAnnouncement = async (req: Request, res: Response) => {
+export const deleteAnnouncement = async (req: any, res: any) => {
     try {
         const { id } = req.params;
         const deleted = await Announcement.findByIdAndDelete(id);

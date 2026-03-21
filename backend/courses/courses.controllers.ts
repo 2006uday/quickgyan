@@ -40,7 +40,7 @@ async function createCourseNotifications(courseNames: string[]) {
 }
 
 // add courses data
-async function addCourse(req: Request, res: Response) {
+async function addCourse(req: any, res: any) {
     try {
         console.log("Incoming request body:", req.body);
 
@@ -88,7 +88,7 @@ async function addCourse(req: Request, res: Response) {
 }
 
 // get courses data
-async function getCourses(req: Request, res: Response) {
+async function getCourses(req: any, res: any) {
     try {
         const courses = await courseSchema.find();
         return res.status(200).json(courses);
@@ -100,7 +100,7 @@ async function getCourses(req: Request, res: Response) {
 
 import Resource from "../resourse/resourse.models";
 
-async function updateCourse(req: Request, res: Response) {
+async function updateCourse(req: any, res: any) {
     try {
         console.log("Update Request body:", req.body);
         const body = req.body;
@@ -144,7 +144,7 @@ async function updateCourse(req: Request, res: Response) {
     }
 }
 
-async function deleteCourse(req: Request, res: Response) {
+async function deleteCourse(req: any, res: any) {
     try {
         console.log("Delete Request body:", req.body);
         const body = Array.isArray(req.body) ? req.body[0] : req.body;

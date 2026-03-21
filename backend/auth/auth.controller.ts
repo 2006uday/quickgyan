@@ -9,7 +9,7 @@ dotenv.config();
 const JWT_SECRET = process.env.JWT_SECRET;
 if (!JWT_SECRET) throw new Error("JWT_SECRET is not defined in .env");
 
-async function userPost(req: Request, res: Response) {
+async function userPost(req: any, res: any) {
     console.log("userPost : ", req.body);
 
     try {
@@ -58,7 +58,7 @@ async function userPost(req: Request, res: Response) {
     }
 }
 
-async function loginPost(req: Request, res: Response) {
+async function loginPost(req: any, res: any) {
     console.log("loginPost : ", req.body);
     try {
 
@@ -121,7 +121,7 @@ async function loginPost(req: Request, res: Response) {
     }
 }
 
-async function otpPost(req: Request, res: Response) {
+async function otpPost(req: any, res: any) {
     try {
         const { email } = req.body;
         const otp = Math.floor(100000 + Math.random() * 900000);
@@ -168,7 +168,7 @@ async function otpPost(req: Request, res: Response) {
     }
 }
 
-async function otpVerifyPost(req: Request, res: Response) {
+async function otpVerifyPost(req: any, res: any) {
     try {
         const { email, otp } = req.body;
 
@@ -201,7 +201,7 @@ async function otpVerifyPost(req: Request, res: Response) {
     }
 }
 
-async function allOtpDelete(req: Request, res: Response) {
+async function allOtpDelete(req: any, res: any) {
     try {
         const otpStore = await Otp.deleteMany({});
         return res.status(200).json({ message: "All OTPs deleted successfully" });
@@ -211,7 +211,7 @@ async function allOtpDelete(req: Request, res: Response) {
     }
 }
 
-async function logoutPost(req: Request, res: Response) {
+async function logoutPost(req: any, res: any) {
     console.log("logoutPost");
     try {
         res.clearCookie("accessToken");
@@ -227,7 +227,7 @@ async function logoutPost(req: Request, res: Response) {
     }
 }
 
-async function deleteUser(req: Request, res: Response) {
+async function deleteUser(req: any, res: any) {
     console.log("deleteUser : ", req.params);
     try {
 
@@ -243,7 +243,7 @@ async function deleteUser(req: Request, res: Response) {
     }
 }
 
-async function getUserDetails(req: Request, res: Response) {
+async function getUserDetails(req: any, res: any) {
     try {
         const details = req.cookies.accessToken;
         const decodedToken = jwt.verify(details, JWT_SECRET!) as jwt.JwtPayload;
@@ -254,7 +254,7 @@ async function getUserDetails(req: Request, res: Response) {
     }
 }
 
-async function checkAuth(req: Request, res: Response) {
+async function checkAuth(req: any, res: any) {
     try {
         const token = req.cookies.accessToken;
         const decodedToken = jwt.verify(token, JWT_SECRET!) as jwt.JwtPayload;
@@ -275,7 +275,7 @@ async function checkAuth(req: Request, res: Response) {
     }
 }
 
-async function updateUserDetails(req: Request, res: Response) {
+async function updateUserDetails(req: any, res: any) {
     try {
         console.log("req.body : ", req.body);
 
@@ -307,7 +307,7 @@ async function updateUserDetails(req: Request, res: Response) {
     }
 }
 
-async function verifyOldPassword(req: Request, res: Response) {
+async function verifyOldPassword(req: any, res: any) {
     try {
         const id = req.id;
         const { oldPassword } = req.body;
@@ -333,7 +333,7 @@ async function verifyOldPassword(req: Request, res: Response) {
     }
 }
 
-async function passwordChange(req: Request, res: Response) {
+async function passwordChange(req: any, res: any) {
     try {
         const id = req.id;
         const { newPassword } = req.body;
@@ -352,7 +352,7 @@ async function passwordChange(req: Request, res: Response) {
     }
 }
 
-async function getAllUsers(req: Request, res: Response) {
+async function getAllUsers(req: any, res: any) {
     try {
         const users = await User.find({}, { password: 0, refreshToken: 0 }); // Exclude sensitive fields
         return res.status(200).json(users);
@@ -362,7 +362,7 @@ async function getAllUsers(req: Request, res: Response) {
     }
 }
 
-async function getAdminStats(req: Request, res: Response) {
+async function getAdminStats(req: any, res: any) {
     try {
         const totalUsers = await User.countDocuments();
         const activeThreshold = new Date(Date.now() - 5 * 60 * 1000); // Active in last 5 minutes
@@ -378,7 +378,7 @@ async function getAdminStats(req: Request, res: Response) {
     }
 }
 
-async function updateUserStatus(req: Request, res: Response) {
+async function updateUserStatus(req: any, res: any) {
     try {
         const { id, status } = req.body;
         if (!id || !status) {
@@ -392,7 +392,7 @@ async function updateUserStatus(req: Request, res: Response) {
     }
 }
 
-async function statusUpdate(req: Request, res: Response) {
+async function statusUpdate(req: any, res: any) {
     try {
         const { id, status } = req.body;
         if (!id || !status) {
@@ -411,7 +411,7 @@ async function statusUpdate(req: Request, res: Response) {
     }
 }
 
-async function sendAccountStatusEmail(req: Request, res: Response) {
+async function sendAccountStatusEmail(req: any, res: any) {
     try {
         const { id } = req.body;
         if (!id) {
@@ -447,7 +447,7 @@ async function sendAccountStatusEmail(req: Request, res: Response) {
     }
 }
 
-async function adminDeleteUser(req: Request, res: Response) {
+async function adminDeleteUser(req: any, res: any) {
     try {
         const { id } = req.body;
         if (!id) {

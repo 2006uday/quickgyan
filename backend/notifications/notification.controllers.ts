@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
 import Notification from "./notification.models";
 
-async function getNotifications(req: any, res: Response) {
+async function getNotifications(req: any, res: any) {
     try {
         const userId = req.user.id;
         if (!userId) {
@@ -19,7 +19,7 @@ async function getNotifications(req: any, res: Response) {
     }
 }
 
-async function markAsRead(req: any, res: Response) {
+async function markAsRead(req: any, res: any) {
     try {
         const { id } = req.body;
         if (!id) {

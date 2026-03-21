@@ -2,7 +2,7 @@ import { Request, Response } from "express";
 import { GoogleGenAI } from "@google/genai";
 import ChatMessage from "./aiChat.models";
 
-export const askAI = async (req: any, res: Response) => {
+export const askAI = async (req: any, res: any) => {
     try {
         const { message } = req.body;
         const userId = req.user?.id;
@@ -60,7 +60,7 @@ export const askAI = async (req: any, res: Response) => {
     }
 };
 
-export const getHistory = async (req: any, res: Response) => {
+export const getHistory = async (req: any, res: any) => {
     try {
         const userId = req.user?.id;
         if (!userId) {
@@ -78,7 +78,7 @@ export const getHistory = async (req: any, res: Response) => {
     }
 };
 
-export const clearHistory = async (req: any, res: Response) => {
+export const clearHistory = async (req: any, res: any) => {
     try {
         const userId = req.user?.id;
         if (!userId) {

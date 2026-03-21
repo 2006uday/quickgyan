@@ -29,7 +29,7 @@ async function createBulkNotifications(resourceTitle: string, resourceType: stri
     }
 }
 
-async function uploadResourse(req: any, res: Response) { // Using 'any' for 'req' to avoid 'file is possibly undefined' error
+async function uploadResourse(req: any, res: any) { // Using 'any' for 'req' to avoid 'file is possibly undefined' error
     try {
         const { resourceTitle, resourceType, semester, course } = req.body;
 
@@ -81,7 +81,7 @@ async function uploadResourse(req: any, res: Response) { // Using 'any' for 'req
         });
     }
 }
-async function getResource(req: Request, res: Response) {
+async function getResource(req: any, res: any) {
     try {
         const resources = await Resource.find().sort({ createdAt: -1 });
         return res.status(200).json({ resources });
@@ -93,7 +93,7 @@ async function getResource(req: Request, res: Response) {
         });
     }
 }
-async function updateResource(req: any, res: Response) {
+async function updateResource(req: any, res: any) {
     try {
         const { id, resourceTitle, resourceType, semester, course } = req.body;
         if (!id) {
@@ -148,7 +148,7 @@ async function updateResource(req: any, res: Response) {
     }
 }
 
-async function deleteResource(req: Request, res: Response) {
+async function deleteResource(req: any, res: any) {
     try {
         const { id } = req.body;
         if (!id) {
