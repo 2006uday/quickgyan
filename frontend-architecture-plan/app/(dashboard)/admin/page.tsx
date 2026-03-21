@@ -12,6 +12,18 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Textarea } from "@/components/ui/textarea"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
+import { toast } from "sonner"
 import { useState, useEffect } from "react"
 import { useAuth } from "@/lib/auth-context"
 import {
@@ -25,70 +37,85 @@ import {
   AlertCircle,
 } from "lucide-react"
 
-const recentUploads = [
-  {
-    title: "MCS-041 June 2024 Paper",
-    uploader: "Admin",
-    date: "2 hours ago",
-    status: "published",
-  },
-  {
-    title: "Operating Systems Notes",
-    uploader: "Admin",
-    date: "5 hours ago",
-    status: "published",
-  },
-  {
-    title: "BCS-031 Study Guide",
-    uploader: "Admin",
-    date: "Yesterday",
-    status: "draft",
-  },
-]
-
-const recentUsers = [
-  {
-    name: "Rahul Kumar",
-    email: "rahul@example.com",
-    enrollment: "2350539610",
-    joinedAt: "2 hours ago",
-  },
-  {
-    name: "Priya Sharma",
-    email: "priya@example.com",
-    enrollment: "2350539611",
-    joinedAt: "5 hours ago",
-  },
-  {
-    name: "Amit Singh",
-    email: "amit@example.com",
-    enrollment: "2350539612",
-    joinedAt: "Yesterday",
-  },
-]
 
 export default function AdminDashboard() {
-  const { getAdminStats } = useAuth()
+  const { getAdminStats, getAllUsers, getResources, getCourses, addAnnouncement } = useAuth()
   const [stats, setStats] = useState({
     totalUsers: 0,
     activeUsers: 0,
-    totalResources: 526,
-    activeCourses: 24,
+    totalResources: 0,
+    activeCourses: 0,
   })
+  const [recentUploads, setRecentUploads] = useState<any[]>([])
+  const [recentUsers, setRecentUsers] = useState<any[]>([])
+  const [isAnnouncementOpen, setIsAnnouncementOpen] = useState(false)
+  const [announcementTitle, setAnnouncementTitle] = useState("")
+  const [announcementContent, setAnnouncementContent] = useState("")
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
   useEffect(() => {
     const loadStats = async () => {
-      const response = await getAdminStats()
-      if (response.success && response.data) {
+      const statsRes = await getAdminStats()
+      if (statsRes.success && statsRes.data) {
         setStats(prev => ({
           ...prev,
-          totalUsers: response.data.totalUsers,
-          activeUsers: response.data.activeUsers
+          totalUsers: statsRes.data.totalUsers,
+          activeUsers: statsRes.data.activeUsers
+        }))
+      }
+
+      const usersRes = await getAllUsers()
+      if (usersRes.success && usersRes.data) {
+        // Sort by createdAt desc and take top 5
+        const sortedUsers = [...usersRes.data]
+          .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+          .slice(0, 5)
+        setRecentUsers(sortedUsers)
+      }
+
+      const resourcesRes = await getResources()
+      if (resourcesRes.success && resourcesRes.data?.resources) {
+        setRecentUploads(resourcesRes.data.resources.slice(0, 5))
+        setStats(prev => ({
+          ...prev,
+          totalResources: resourcesRes.data.resources.length
+        }))
+      }
+
+      const coursesRes = await getCourses()
+      if (coursesRes.success && coursesRes.data) {
+        setStats(prev => ({
+          ...prev,
+          activeCourses: coursesRes.data.length
         }))
       }
     }
     loadStats()
   }, [])
+
+  const handleSendAnnouncement = async () => {
+    if (!announcementTitle || !announcementContent) {
+      toast.error("Title and message are required")
+      return
+    }
+
+    try {
+      setIsSubmitting(true)
+      const res = await addAnnouncement(announcementTitle, announcementContent)
+      if (res.success) {
+        toast.success("Announcement broadcasted successfully")
+        setAnnouncementTitle("")
+        setAnnouncementContent("")
+        setIsAnnouncementOpen(false)
+      } else {
+        toast.error(res.error || "Failed to send announcement")
+      }
+    } catch (error) {
+      toast.error("An error occurred")
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
 
   const statCards = [
     {
@@ -208,29 +235,29 @@ export default function AdminDashboard() {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {recentUploads.map((upload, i) => (
-                <div
-                  key={i}
-                  className="flex items-center justify-between gap-4 rounded-lg p-2 transition-colors hover:bg-muted/50"
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="rounded bg-primary/10 p-2">
-                      <FileText className="h-4 w-4 text-primary" />
-                    </div>
-                    <div>
-                      <p className="font-medium">{upload.title}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {upload.uploader} • {upload.date}
-                      </p>
-                    </div>
-                  </div>
-                  <Badge
-                    variant={upload.status === "published" ? "default" : "secondary"}
+              {recentUploads.length > 0 ? (
+                recentUploads.map((upload, i) => (
+                  <div
+                    key={i}
+                    className="flex items-center justify-between gap-4 rounded-lg p-2 transition-colors hover:bg-muted/50"
                   >
-                    {upload.status}
-                  </Badge>
-                </div>
-              ))}
+                    <div className="flex items-center gap-3">
+                      <div className="rounded bg-primary/10 p-2">
+                        <FileText className="h-4 w-4 text-primary" />
+                      </div>
+                      <div>
+                        <p className="font-medium">{upload.resourceTitle}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {upload.course} • {new Date(upload.createdAt).toLocaleDateString()}
+                        </p>
+                      </div>
+                    </div>
+                    <Badge variant="default">Published</Badge>
+                  </div>
+                ))
+              ) : (
+                <p className="text-sm text-muted-foreground py-4 text-center">No recent uploads</p>
+              )}
             </div>
           </CardContent>
         </Card>
@@ -248,25 +275,31 @@ export default function AdminDashboard() {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {recentUsers.map((user, i) => (
-                <div
-                  key={i}
-                  className="flex items-center justify-between gap-4 rounded-lg p-2 transition-colors hover:bg-muted/50"
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="flex h-9 w-9 items-center justify-center rounded-full bg-primary/10 text-sm font-medium text-primary">
-                      {user.name.charAt(0)}
+              {recentUsers.length > 0 ? (
+                recentUsers.map((user, i) => (
+                  <div
+                    key={i}
+                    className="flex items-center justify-between gap-4 rounded-lg p-2 transition-colors hover:bg-muted/50"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="flex h-9 w-9 items-center justify-center rounded-full bg-primary/10 text-sm font-medium text-primary">
+                        {(user.username || user.name || "?").charAt(0).toUpperCase()}
+                      </div>
+                      <div>
+                        <p className="font-medium">{user.username || user.name}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {user.enrollment_no || user.enrollmentNo || "N/A"}
+                        </p>
+                      </div>
                     </div>
-                    <div>
-                      <p className="font-medium">{user.name}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {user.enrollment}
-                      </p>
-                    </div>
+                    <span className="text-xs text-muted-foreground">
+                      {new Date(user.createdAt).toLocaleDateString()}
+                    </span>
                   </div>
-                  <span className="text-xs text-muted-foreground">{user.joinedAt}</span>
-                </div>
-              ))}
+                ))
+              ) : (
+                <p className="text-sm text-muted-foreground py-4 text-center">No recent registrations</p>
+              )}
             </div>
           </CardContent>
         </Card>
@@ -298,13 +331,56 @@ export default function AdminDashboard() {
                 <span>Manage Users</span>
               </Button>
             </Link>
-            <Button variant="outline" className="h-auto w-full flex-col gap-2 p-4 bg-transparent">
+            <Button 
+              variant="outline" 
+              className="h-auto w-full flex-col gap-2 p-4 bg-transparent"
+              onClick={() => setIsAnnouncementOpen(true)}
+            >
               <AlertCircle className="h-5 w-5 text-primary" />
               <span>Send Announcement</span>
             </Button>
           </div>
         </CardContent>
       </Card>
+
+      {/* Announcement Dialog */}
+      <Dialog open={isAnnouncementOpen} onOpenChange={setIsAnnouncementOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Broadcast Announcement</DialogTitle>
+            <DialogDescription>
+              This message will be visible to all students on their dashboard.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid gap-2">
+              <Label htmlFor="title">Title</Label>
+              <Input
+                id="title"
+                placeholder="Important: Exam Dates Updated"
+                value={announcementTitle}
+                onChange={(e) => setAnnouncementTitle(e.target.value)}
+              />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="content">Message</Label>
+              <Textarea
+                id="content"
+                placeholder="Write your announcement details here..."
+                className="min-h-[100px]"
+                value={announcementContent}
+                onChange={(e) => setAnnouncementContent(e.target.value)}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsAnnouncementOpen(false)}>Cancel</Button>
+            <Button onClick={handleSendAnnouncement} disabled={isSubmitting}>
+              {isSubmitting ? "Sending..." : "Send Announcement"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

@@ -1,6 +1,43 @@
 import courseSchema from "./courses.models";
 import { Request, Response } from "express";
+import { User } from "../auth/auth.model";
+import Notification from "../notifications/notification.models";
 
+async function createCourseNotifications(courseNames: string[]) {
+    try {
+        const users = await User.find({ status: "active" }, "_id");
+        if (users.length === 0) return;
+
+        const notifications = users.flatMap(user => 
+            courseNames.map(name => ({
+                userId: user._id,
+                title: "New Course Added",
+                message: `An exciting new course "${name}" has been added to the curriculum. Check it out!`,
+                type: "info"
+            }))
+        );
+
+        // To avoid overwhelming users if many courses are added at once, 
+        // maybe just one notification for the batch?
+        // Let's do one notification if multiple courses are added.
+        
+        const summaryMessage = courseNames.length === 1 
+            ? `A new course "${courseNames[0]}" has been added.` 
+            : `${courseNames.length} new courses have been added, including "${courseNames[0]}".`;
+
+        const singleNotifications = users.map(user => ({
+            userId: user._id,
+            title: "New Courses Available",
+            message: summaryMessage,
+            type: "info"
+        }));
+
+        await Notification.insertMany(singleNotifications);
+        console.log(`Course notifications created for ${users.length} users`);
+    } catch (error) {
+        console.error("Error creating course notifications:", error);
+    }
+}
 
 // add courses data
 async function addCourse(req: Request, res: Response) {
@@ -32,6 +69,10 @@ async function addCourse(req: Request, res: Response) {
         }
 
         const result = await courseSchema.insertMany(coursesToInsert);
+
+        // Notify users
+        const courseNames = items.map(item => item.courseName);
+        createCourseNotifications(courseNames);
 
         return res.status(201).json({
             message: `${result.length} course(s) added successfully`,

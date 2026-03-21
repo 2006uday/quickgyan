@@ -53,6 +53,13 @@ interface AuthContextType {
   updateUserStatus: (id: string, status: string) => Promise<{ success: boolean; error?: string }>
   sendAccountStatusEmail: (id: string) => Promise<{ success: boolean; error?: string }>
   deleteUserByAdmin: (id: string) => Promise<{ success: boolean; error?: string }>
+  getResources: () => Promise<{ success: boolean; data?: any; error?: string }>
+  addAnnouncement: (title: string, content: string) => Promise<{ success: boolean; error?: string }>
+  getAnnouncements: () => Promise<{ success: boolean; data?: any; error?: string }>
+  getNotifications: () => Promise<{ success: boolean; data?: any; error?: string }>
+  markNotificationAsRead: (id: string) => Promise<{ success: boolean; error?: string }>
+  getAIHistory: () => Promise<{ success: boolean; data?: any; error?: string }>
+  clearAIHistory: () => Promise<{ success: boolean; error?: string }>
 }
 
 // ---------------------------------------------------------------------------
@@ -457,6 +464,69 @@ export function AuthProvider({ children, initialUser }: { children: ReactNode, i
     }
   }
 
+  const getResources = async (): Promise<{ success: boolean; data?: any; error?: string }> => {
+    try {
+      const res = await axios.get(`http://localhost:8060/resources/getresource`, axiosConfig)
+      return { success: true, data: res.data }
+    } catch (err) {
+      return { success: false, error: extractError(err, "Failed to get resources.") }
+    }
+  }
+
+  const addAnnouncement = async (title: string, content: string) => {
+    try {
+      await axios.post(`http://localhost:8060/announcements/add`, { title, content }, axiosConfig)
+      return { success: true }
+    } catch (err) {
+      return { success: false, error: extractError(err, "Failed to add announcement") }
+    }
+  }
+
+  const getAnnouncements = async () => {
+    try {
+      const res = await axios.get(`http://localhost:8060/announcements/get`, axiosConfig)
+      return { success: true, data: res.data }
+    } catch (err) {
+      return { success: false, error: extractError(err, "Failed to fetch announcements") }
+    }
+  }
+
+  const getNotifications = async () => {
+    try {
+      const res = await axios.get(`http://localhost:8060/notifications`, axiosConfig)
+      return { success: true, data: res.data }
+    } catch (err) {
+      return { success: false, error: extractError(err, "Failed to fetch notifications") }
+    }
+  }
+
+  const markNotificationAsRead = async (id: string) => {
+    try {
+      await axios.put(`http://localhost:8060/notifications/mark-read`, { id }, axiosConfig)
+      return { success: true }
+    } catch (err) {
+      return { success: false, error: extractError(err, "Failed to mark notification as read") }
+    }
+  }
+
+  const getAIHistory = async () => {
+    try {
+      const res = await axios.get(`${API_BASE_AI}/history`, axiosConfig)
+      return { success: true, data: res.data }
+    } catch (err) {
+      return { success: false, error: extractError(err, "Failed to fetch AI history") }
+    }
+  }
+
+  const clearAIHistory = async () => {
+    try {
+      await axios.delete(`${API_BASE_AI}/clear`, axiosConfig)
+      return { success: true }
+    } catch (err) {
+      return { success: false, error: extractError(err, "Failed to clear AI history") }
+    }
+  }
+
   // ---------------------------------------------------------------------------
   // Provider
   // ---------------------------------------------------------------------------
@@ -484,7 +554,14 @@ export function AuthProvider({ children, initialUser }: { children: ReactNode, i
       verifyOldPassword,
       changePassword,
       sendAccountStatusEmail,
-      deleteUserByAdmin
+      deleteUserByAdmin,
+      getResources,
+      addAnnouncement,
+      getAnnouncements,
+      getNotifications,
+      markNotificationAsRead,
+      getAIHistory,
+      clearAIHistory
     }}>
       {children}
     </AuthContext.Provider>

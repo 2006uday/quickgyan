@@ -55,12 +55,18 @@ export default function ResourcesPage() {
   const [selectedSemester, setSelectedSemester] = useState(
     searchParams.get("semester") || "all"
   )
-  const [selectedTypes, setSelectedTypes] = useState<string[]>([])
+  const [selectedTypes, setSelectedTypes] = useState<string[]>(
+    searchParams.get("type") ? [searchParams.get("type")!] : []
+  )
   const [previewResource, setPreviewResource] = useState<any | null>(null)
   const [showFilters, setShowFilters] = useState(false)
   const [realResources, setRealResources] = useState<any[]>([])
   const [coursesFromDb, setCoursesFromDb] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
+
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1)
+  const itemsPerPage = 12 // Using 12 for better grid alignment (3x4 or 2x6)
 
   const fetchAllData = async () => {
     try {
@@ -80,6 +86,17 @@ export default function ResourcesPage() {
       setLoading(false)
     }
   }
+
+  useEffect(() => {
+    const type = searchParams.get("type")
+    if (type) {
+      setSelectedTypes([type])
+    }
+    const semester = searchParams.get("semester")
+    if (semester) {
+      setSelectedSemester(semester)
+    }
+  }, [searchParams])
 
   useEffect(() => {
     fetchAllData()
@@ -113,6 +130,16 @@ export default function ResourcesPage() {
       return true
     })
   }, [realResources, searchQuery, selectedSemester, selectedTypes, searchParams])
+
+  // Reset to first page when filters change
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [searchQuery, selectedSemester, selectedTypes])
+
+  // Pagination logic
+  const totalPages = Math.ceil(filteredResources.length / itemsPerPage)
+  const startIndex = (currentPage - 1) * itemsPerPage
+  const paginatedResources = filteredResources.slice(startIndex, startIndex + itemsPerPage)
 
   const handleTypeToggle = (type: string) => {
     setSelectedTypes((prev) =>
@@ -212,12 +239,12 @@ export default function ResourcesPage() {
 
       {/* Results count */}
       <p className="text-sm text-muted-foreground">
-        Showing {filteredResources.length} resource{filteredResources.length !== 1 ? "s" : ""}
+        Showing {startIndex + 1}-{Math.min(startIndex + itemsPerPage, filteredResources.length)} of {filteredResources.length} resources
       </p>
 
       {/* Resource Grid */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {filteredResources.map((resource) => {
+        {paginatedResources.map((resource) => {
           const Icon = resourceTypeIcons[resource.resourceType as keyof typeof resourceTypeIcons] || FileText
           return (
             <Card key={resource._id} className="flex flex-col">
@@ -272,6 +299,44 @@ export default function ResourcesPage() {
           )
         })}
       </div>
+
+      {/* Pagination Controls */}
+      {totalPages > 1 && (
+        <div className="flex items-center justify-center space-x-2 py-8">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+            disabled={currentPage === 1}
+            className="bg-transparent"
+          >
+            Previous
+          </Button>
+          <div className="flex items-center gap-1">
+            {/* Show page numbers with ellipsis logic if needed, but for now just list them */}
+            {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+              <Button
+                key={page}
+                variant={currentPage === page ? "default" : "outline"}
+                size="sm"
+                className="h-8 w-8 p-0"
+                onClick={() => setCurrentPage(page)}
+              >
+                {page}
+              </Button>
+            ))}
+          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+            disabled={currentPage === totalPages}
+            className="bg-transparent"
+          >
+            Next
+          </Button>
+        </div>
+      )}
 
       {filteredResources.length === 0 && (
         <Card>

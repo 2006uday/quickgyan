@@ -33,7 +33,8 @@ const notificationSchema = new mongoose.Schema<INotification>({
     },
     createdAt: {
         type: Date,
-        default: Date.now
+        default: Date.now,
+        expires: '7d' // Automatically delete after 1 week
     }
 });
 

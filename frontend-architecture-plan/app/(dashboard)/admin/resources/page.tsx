@@ -59,6 +59,10 @@ export default function AdminResourcesPage() {
   const [loading, setLoading] = useState(true)
   const [fileError, setFileError] = useState<string | null>(null)
 
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1)
+  const itemsPerPage = 10
+
   const fetchResources = async () => {
     try {
       const response = await fetch("http://localhost:8060/resources/getresource")
@@ -102,6 +106,16 @@ export default function AdminResourcesPage() {
       resource.resourceTitle.toLowerCase().includes(searchQuery.toLowerCase()) ||
       resource.course.toLowerCase().includes(searchQuery.toLowerCase())
   )
+
+  // Reset to first page when search changes
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [searchQuery])
+
+  // Pagination logic
+  const totalPages = Math.ceil(filteredResources.length / itemsPerPage)
+  const startIndex = (currentPage - 1) * itemsPerPage
+  const paginatedResources = filteredResources.slice(startIndex, startIndex + itemsPerPage)
 
   const handleUpload = async () => {
     if (fileError) {
@@ -484,7 +498,7 @@ export default function AdminResourcesPage() {
                     onChange={(e) => {
                       const file = e.target.files?.[0] || null
                       setSelectedFile(file)
-                      if (file && file.size > 5 * 1024 * 1024) {
+                      if (file && file.size > 5 * 1024 * 1024) { // Reverting to original 5MB for edit
                         setFileError("File is too large! Maximum allowed size is 5MB.")
                       } else {
                         setFileError(null)
@@ -556,7 +570,7 @@ export default function AdminResourcesPage() {
                   </TableCell>
                 </TableRow>
               ) : (
-                filteredResources.map((resource) => (
+                paginatedResources.map((resource) => (
                   <TableRow key={resource._id}>
                     <TableCell>
                       <div className="flex items-center gap-2">
@@ -616,6 +630,46 @@ export default function AdminResourcesPage() {
               )}
             </TableBody>
           </Table>
+
+          {/* Pagination Controls */}
+          {totalPages > 1 && (
+            <div className="flex items-center justify-between px-2 py-4">
+              <div className="text-sm text-muted-foreground">
+                Showing {startIndex + 1} to {Math.min(startIndex + itemsPerPage, filteredResources.length)} of {filteredResources.length} resources
+              </div>
+              <div className="flex items-center space-x-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                  disabled={currentPage === 1}
+                >
+                  Previous
+                </Button>
+                <div className="flex items-center gap-1">
+                  {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                    <Button
+                      key={page}
+                      variant={currentPage === page ? "default" : "outline"}
+                      size="sm"
+                      className="h-8 w-8 p-0"
+                      onClick={() => setCurrentPage(page)}
+                    >
+                      {page}
+                    </Button>
+                  ))}
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                  disabled={currentPage === totalPages}
+                >
+                  Next
+                </Button>
+              </div>
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>

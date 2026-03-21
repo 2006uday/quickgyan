@@ -16,22 +16,18 @@ import { Search, Bell, Menu, BookOpen, User, Settings, LogOut } from "lucide-rea
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
 
 export function DashboardHeader() {
-  const { user, logout } = useAuth()
+  const { user, logout, getNotifications, markNotificationAsRead } = useAuth()
   const [searchQuery, setSearchQuery] = useState("")
   const [notifications, setNotifications] = useState<any[]>([])
   const [unreadCount, setUnreadCount] = useState(0)
 
   const fetchNotifications = async () => {
     try {
-      const response = await fetch("http://localhost:8060/notifications", {
-        headers: {
-          // In a real app, this should handle auth headers correctly if cookies aren't used
-        }
-      })
-      const data = await response.json()
-      if (response.ok) {
-        setNotifications(data.notifications || [])
-        setUnreadCount(data.notifications.filter((n: any) => !n.isRead).length)
+      const res = await getNotifications();
+      if (res.success) {
+        const notifs = res.data?.notifications || [];
+        setNotifications(notifs);
+        setUnreadCount(notifs.filter((n: any) => !n.isRead).length);
       }
     } catch (error) {
       console.error("Failed to fetch notifications:", error)
@@ -40,12 +36,8 @@ export function DashboardHeader() {
 
   const handleMarkAsRead = async (id: string) => {
     try {
-      const response = await fetch("http://localhost:8060/notifications/mark-read", {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id })
-      })
-      if (response.ok) {
+      const res = await markNotificationAsRead(id);
+      if (res.success) {
         setNotifications(prev => prev.map(n => n._id === id ? { ...n, isRead: true } : n))
         setUnreadCount(prev => Math.max(0, prev - 1))
       }
@@ -137,23 +129,30 @@ export function DashboardHeader() {
             </div>
             <div className="max-h-80 overflow-y-auto">
               {notifications.length > 0 ? (
-                notifications.map((notification) => (
-                  <div 
-                    key={notification._id} 
-                    className={`flex flex-col gap-1 p-4 border-b last:border-0 hover:bg-muted/50 cursor-pointer ${!notification.isRead ? 'bg-primary/5' : ''}`}
-                    onClick={() => !notification.isRead && handleMarkAsRead(notification._id)}
-                  >
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm font-medium">{notification.title}</span>
-                      <span className="text-[10px] text-muted-foreground">
-                        {new Date(notification.createdAt).toLocaleDateString()}
-                      </span>
+                <>
+                  {notifications.slice(0, 5).map((notification) => (
+                    <div 
+                      key={notification._id} 
+                      className={`flex flex-col gap-1 p-4 border-b last:border-0 hover:bg-muted/50 cursor-pointer ${!notification.isRead ? 'bg-primary/5' : ''}`}
+                      onClick={() => !notification.isRead && handleMarkAsRead(notification._id)}
+                    >
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm font-medium truncate pr-4">{notification.title}</span>
+                        <span className="text-[10px] text-muted-foreground whitespace-nowrap">
+                          {new Date(notification.createdAt).toLocaleDateString()}
+                        </span>
+                      </div>
+                      <p className="text-xs text-muted-foreground line-clamp-2">
+                        {notification.message}
+                      </p>
                     </div>
-                    <p className="text-xs text-muted-foreground line-clamp-2">
-                      {notification.message}
-                    </p>
+                  ))}
+                  <div className="p-2 border-t text-center">
+                    <Link href="/dashboard" className="text-xs font-medium text-primary hover:underline">
+                      View all notifications in Dashboard
+                    </Link>
                   </div>
-                ))
+                </>
               ) : (
                 <div className="p-8 text-center text-sm text-muted-foreground">
                   No notifications yet

@@ -1,6 +1,7 @@
 import multer from 'multer';
 import { v2 as cloudinary } from 'cloudinary';
 import { Request, Response } from 'express';
+import { Readable } from 'stream';
 import dotenv from 'dotenv';
 
 dotenv.config();

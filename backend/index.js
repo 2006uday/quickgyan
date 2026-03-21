@@ -12,6 +12,7 @@ import aiChatRoutes from "./ai_chat/aiChat.routes.ts";
 import coursesRoutes from "./courses/courses.routes.ts";
 import resourseRoutes from "./resourse/resourse.routes.ts";
 import notificationRoutes from "./notifications/notification.routes.ts";
+import announcementRoutes from "./announcements/announcement.routes.ts";
 
 const app = express();
 const PORT = process.env.PORT || 8060;
@@ -34,6 +35,7 @@ app.use('/ai-chat', aiChatRoutes);
 app.use('/courses', coursesRoutes);
 app.use('/resources', resourseRoutes);
 app.use('/notifications', notificationRoutes);
+app.use('/announcements', announcementRoutes);
 // Health check
 app.get('/', function (req, res) {
     res.send('index');
@@ -43,7 +45,7 @@ app.get('/', function (req, res) {
 app.use((err, req, res, next) => {
     if (err instanceof multer.MulterError) {
         if (err.code === "LIMIT_FILE_SIZE") {
-            return res.status(400).json({ error: "File too large. Maximum size is 5MB." });
+            return res.status(400).json({ error: "File too large. Maximum size is 10MB." });
         }
         return res.status(400).json({ error: err.message });
     } else if (err) {
