@@ -47,7 +47,7 @@ export default async function RootLayout({
         <AuthProvider initialUser={user}>
           {children}
         </AuthProvider>
-        <Analytics />
+        {/* <Analytics /> */}
       </body>
     </html>
   )
