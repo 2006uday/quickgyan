@@ -72,8 +72,8 @@ export default function ResourcesPage() {
     try {
       setLoading(true)
       const [resRes, courseRes] = await Promise.all([
-        fetch("https://quickgyan-backend.vercel.app/resources/getresource"),
-        fetch("https://quickgyan-backend.vercel.app/courses/get-courses")
+        fetch("http://localhost:8060/resources/getresource"),
+        fetch("http://localhost:8060/courses/get-courses")
       ])
       const resData = await resRes.json()
       const courseData = await courseRes.json()

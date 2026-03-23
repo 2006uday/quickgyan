@@ -13,7 +13,7 @@ export const me = async () => {
     }
 
     try {
-        const res = await fetch("http://localhost:8060auth/me", {
+        const res = await fetch("http://localhost:8060/auth/me", {
             method: "GET",
             headers: headers,
         });
