@@ -102,7 +102,7 @@ async function loginPost(req, res) {
         }).cookie("refreshToken", refreshToken, {
             httpOnly: true,
             secure: true,
-            sameSite: "lax",
+            sameSite: "none",
             maxAge: 1000 * 60 * 60 * 24 * 7,
         }).status(200).json({
             message: "User logged in successfully",
@@ -246,7 +246,7 @@ async function deleteUser(req, res) {
 async function getUserDetails(req, res) {
     try {
         const details = req.cookies.accessToken;
-        const decodedToken = jwt.verify(details, JWT_SECRET) ;
+        const decodedToken = jwt.verify(details, JWT_SECRET);
         return res.status(200).json({ message: "User details fetched successfully", user: decodedToken });
     } catch (error) {
         console.log(error);
@@ -257,17 +257,17 @@ async function getUserDetails(req, res) {
 async function checkAuth(req, res) {
     try {
         const token = req.cookies.accessToken;
-        const decodedToken = jwt.verify(token, JWT_SECRET) ;
+        const decodedToken = jwt.verify(token, JWT_SECRET);
         // console.log("decodedToken : ", decodedToken);
         if (!decodedToken) {
             return res.status(401).json({ error: "Unauthorized" });
         }
         const data = await User.findById({ _id: decodedToken.id });
-    //    if (!data) {
-    //         res.clearCookie("accessToken");
-    //         res.clearCookie("refreshToken");
-    //         return res.status(401).json({ error: "User not found or unauthorized" });
-    //     } 
+        if (!data) {
+            res.clearCookie("accessToken");
+            res.clearCookie("refreshToken");
+            return res.status(401).json({ error: "User not found or unauthorized" });
+        }
         return res.status(200).json({ message: "User is authorized", user: data });
     } catch (error) {
         console.log(error);
