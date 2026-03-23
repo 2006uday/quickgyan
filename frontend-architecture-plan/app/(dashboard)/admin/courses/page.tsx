@@ -32,7 +32,7 @@ import {
 } from "@/components/ui/dialog"
 import { semesters } from "@/lib/mock-data"
 import {
-  
+
   Search,
   Plus,
   Pencil,
@@ -55,7 +55,7 @@ export default function AdminCoursesPage() {
   })
   const { addCourses, getCourses, updateCourse, deleteCourse } = useAuth()
   const [courses, setCourses] = useState<any[]>([])
-  
+
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1)
   const itemsPerPage = 10
@@ -409,8 +409,8 @@ export default function AdminCoursesPage() {
                   <TableCell>Semester {course.semester}</TableCell>
                   <TableCell className="text-right">
                     <div className="flex justify-end gap-2">
-                      <Button 
-                        variant="ghost" 
+                      <Button
+                        variant="ghost"
                         size="icon"
                         onClick={() => {
                           setEditingCourse(course)
@@ -425,9 +425,9 @@ export default function AdminCoursesPage() {
                       >
                         <Pencil className="h-4 w-4" />
                       </Button>
-                      <Button 
-                        variant="ghost" 
-                        size="icon" 
+                      <Button
+                        variant="ghost"
+                        size="icon"
                         className="text-destructive"
                         onClick={() => handleDeleteCourse(course.id)}
                       >

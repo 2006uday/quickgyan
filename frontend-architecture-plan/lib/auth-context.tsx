@@ -60,14 +60,23 @@ interface AuthContextType {
   markNotificationAsRead: (id: string) => Promise<{ success: boolean; error?: string }>
   getAIHistory: () => Promise<{ success: boolean; data?: any; error?: string }>
   clearAIHistory: () => Promise<{ success: boolean; error?: string }>
+  addResource: (formData: FormData) => Promise<{ success: boolean; error?: string }>
+  updateResource: (formData: FormData) => Promise<{ success: boolean; error?: string }>
+  deleteResource: (id: string) => Promise<{ success: boolean; error?: string }>
+  deleteAnnouncement: (id: string) => Promise<{ success: boolean; error?: string }>
 }
 
 // ---------------------------------------------------------------------------
 // Base URL — change once, works everywhere
 // ---------------------------------------------------------------------------
 
-const API_BASE = "https://quickgyan-backend.vercel.app/auth"
-const API_BASE_AI = "https://quickgyan-backend.vercel.app/ai-chat"
+const API_BASE_URL = "http://localhost:8060"
+const API_BASE = `${API_BASE_URL}/auth`
+const API_BASE_AI = `${API_BASE_URL}/ai-chat`
+const API_BASE_COURSES = `${API_BASE_URL}/courses`
+const API_BASE_RESOURCES = `${API_BASE_URL}/resources`
+const API_BASE_NOTIFICATIONS = `${API_BASE_URL}/notifications`
+const API_BASE_ANNOUNCEMENTS = `${API_BASE_URL}/announcements`
 
 
 const axiosConfig = {
@@ -137,7 +146,7 @@ export function AuthProvider({ children, initialUser }: { children: ReactNode, i
     id: string
   ): Promise<{ success: boolean; error?: string }> => {
     try {
-      const res = await axios.put(`https://quickgyan-backend.vercel.app/courses/update-course`, { courseName, courseCode, credits, semester, id }, axiosConfig)
+      const res = await axios.put(`${API_BASE_COURSES}/update-course`, { courseName, courseCode, credits, semester, id }, axiosConfig)
       if (res.data?.user) {
         const u = res.data.user;
         const userData: User = {
@@ -167,7 +176,7 @@ export function AuthProvider({ children, initialUser }: { children: ReactNode, i
     try {
       console.log("data : ", data);
 
-      const res = await axios.put(`https://quickgyan-backend.vercel.app/auth/update`, data, axiosConfig)
+      const res = await axios.put(`${API_BASE}/update`, data, axiosConfig)
       if (res.data?.user) {
         const u = res.data.user;
         const userData: User = {
@@ -289,7 +298,7 @@ export function AuthProvider({ children, initialUser }: { children: ReactNode, i
     }
     try {
       // 1. Register the user
-      await axios.post('https://quickgyan-backend.vercel.app/auth/signup', {
+      await axios.post(`${API_BASE}/signup`, {
         username: data.name,
         email: data.email,
         enrollment_no: data.enrollmentNo,
@@ -317,7 +326,7 @@ export function AuthProvider({ children, initialUser }: { children: ReactNode, i
       console.log("axiosConfig : ", axiosConfig);
       console.log("API_BASE : ", API_BASE);
       await new Promise(resolve => setTimeout(resolve, 10));
-      await axios.get(`https://quickgyan-backend.vercel.app/auth/logout`, {
+      await axios.get(`${API_BASE}/logout`, {
         headers: {
           'Content-Type': 'application/json',
           'Accept': 'application/json'
@@ -370,7 +379,7 @@ export function AuthProvider({ children, initialUser }: { children: ReactNode, i
 
   const addCourses = async (courseName: string, courseCode: string, credits: number, semester: number): Promise<{ success: boolean; error?: string }> => {
     try {
-      const res = await axios.post(`https://quickgyan-backend.vercel.app/courses/add-course`, { courseName, courseCode, credits, semester }, axiosConfig)
+      const res = await axios.post(`${API_BASE_COURSES}/add-course`, { courseName, courseCode, credits, semester }, axiosConfig)
       return { success: true }
     } catch (err) {
       return { success: false, error: extractError(err, "Failed to add course. Please try again.") }
@@ -379,7 +388,7 @@ export function AuthProvider({ children, initialUser }: { children: ReactNode, i
 
   const getCourses = async (): Promise<{ success: boolean; data?: any; error?: string }> => {
     try {
-      const res = await axios.get(`https://quickgyan-backend.vercel.app/courses/get-courses`, axiosConfig)
+      const res = await axios.get(`${API_BASE_COURSES}/get-courses`, axiosConfig)
       return { success: true, data: res.data }
     } catch (err) {
       return { success: false, error: extractError(err, "Failed to get courses. Please try again.") }
@@ -388,7 +397,7 @@ export function AuthProvider({ children, initialUser }: { children: ReactNode, i
 
   const deleteCourse = async (id: string): Promise<{ success: boolean; error?: string }> => {
     try {
-      await axios.delete(`https://quickgyan-backend.vercel.app/courses/delete-course`, {
+      await axios.delete(`${API_BASE_COURSES}/delete-course`, {
         ...axiosConfig,
         data: { id }
       })
@@ -466,7 +475,7 @@ export function AuthProvider({ children, initialUser }: { children: ReactNode, i
 
   const getResources = async (): Promise<{ success: boolean; data?: any; error?: string }> => {
     try {
-      const res = await axios.get(`https://quickgyan-backend.vercel.app/resources/getresource`, axiosConfig)
+      const res = await axios.get(`${API_BASE_RESOURCES}/getresource`, axiosConfig)
       return { success: true, data: res.data }
     } catch (err) {
       return { success: false, error: extractError(err, "Failed to get resources.") }
@@ -475,7 +484,7 @@ export function AuthProvider({ children, initialUser }: { children: ReactNode, i
 
   const addAnnouncement = async (title: string, content: string) => {
     try {
-      await axios.post(`https://quickgyan-backend.vercel.app/announcements/add`, { title, content }, axiosConfig)
+      await axios.post(`${API_BASE_ANNOUNCEMENTS}/add`, { title, content }, axiosConfig)
       return { success: true }
     } catch (err) {
       return { success: false, error: extractError(err, "Failed to add announcement") }
@@ -484,7 +493,7 @@ export function AuthProvider({ children, initialUser }: { children: ReactNode, i
 
   const getAnnouncements = async () => {
     try {
-      const res = await axios.get(`https://quickgyan-backend.vercel.app/announcements/get`, axiosConfig)
+      const res = await axios.get(`${API_BASE_ANNOUNCEMENTS}/get`, axiosConfig)
       return { success: true, data: res.data }
     } catch (err) {
       return { success: false, error: extractError(err, "Failed to fetch announcements") }
@@ -493,7 +502,7 @@ export function AuthProvider({ children, initialUser }: { children: ReactNode, i
 
   const getNotifications = async () => {
     try {
-      const res = await axios.get(`https://quickgyan-backend.vercel.app/notifications`, axiosConfig)
+      const res = await axios.get(`${API_BASE_NOTIFICATIONS}`, axiosConfig)
       return { success: true, data: res.data }
     } catch (err) {
       return { success: false, error: extractError(err, "Failed to fetch notifications") }
@@ -502,7 +511,7 @@ export function AuthProvider({ children, initialUser }: { children: ReactNode, i
 
   const markNotificationAsRead = async (id: string) => {
     try {
-      await axios.put(`https://quickgyan-backend.vercel.app/notifications/mark-read`, { id }, axiosConfig)
+      await axios.put(`${API_BASE_NOTIFICATIONS}/mark-read`, { id }, axiosConfig)
       return { success: true }
     } catch (err) {
       return { success: false, error: extractError(err, "Failed to mark notification as read") }
@@ -524,6 +533,57 @@ export function AuthProvider({ children, initialUser }: { children: ReactNode, i
       return { success: true }
     } catch (err) {
       return { success: false, error: extractError(err, "Failed to clear AI history") }
+    }
+  }
+
+  const addResource = async (formData: FormData) => {
+    try {
+      await axios.post(`${API_BASE_RESOURCES}/addresource`, formData, {
+        ...axiosConfig,
+        headers: {
+          ...axiosConfig.headers,
+          "Content-Type": "multipart/form-data",
+        },
+      })
+      return { success: true }
+    } catch (err) {
+      return { success: false, error: extractError(err, "Failed to add resource") }
+    }
+  }
+
+  const updateResource = async (formData: FormData) => {
+    try {
+      await axios.put(`${API_BASE_RESOURCES}/updateresource`, formData, {
+        ...axiosConfig,
+        headers: {
+          ...axiosConfig.headers,
+          "Content-Type": "multipart/form-data",
+        },
+      })
+      return { success: true }
+    } catch (err) {
+      return { success: false, error: extractError(err, "Failed to update resource") }
+    }
+  }
+
+  const deleteResource = async (id: string) => {
+    try {
+      await axios.delete(`${API_BASE_RESOURCES}/deleteresource`, {
+        ...axiosConfig,
+        data: { id },
+      })
+      return { success: true }
+    } catch (err) {
+      return { success: false, error: extractError(err, "Failed to delete resource") }
+    }
+  }
+
+  const deleteAnnouncement = async (id: string) => {
+    try {
+      await axios.delete(`${API_BASE_ANNOUNCEMENTS}/delete/${id}`, axiosConfig)
+      return { success: true }
+    } catch (err) {
+      return { success: false, error: extractError(err, "Failed to delete announcement") }
     }
   }
 
@@ -561,7 +621,11 @@ export function AuthProvider({ children, initialUser }: { children: ReactNode, i
       getNotifications,
       markNotificationAsRead,
       getAIHistory,
-      clearAIHistory
+      clearAIHistory,
+      addResource,
+      updateResource,
+      deleteResource,
+      deleteAnnouncement
     }}>
       {children}
     </AuthContext.Provider>

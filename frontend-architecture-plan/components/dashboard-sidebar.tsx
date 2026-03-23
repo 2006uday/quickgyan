@@ -13,6 +13,7 @@ import {
   Settings,
   LogOut,
   Shield,
+  Activity,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 
@@ -29,6 +30,7 @@ const adminNavItems = [
   { name: "Manage Courses", href: "/admin/courses", icon: GraduationCap },
   { name: "Manage Resources", href: "/admin/resources", icon: FileText },
   { name: "Users", href: "/admin/users", icon: Shield },
+  { name: "System Health", href: "/admin/system-health", icon: Activity },
   { name: "Settings", href: "/admin/settings", icon: Settings },
 ]
 

@@ -72,12 +72,12 @@ export default function ResourcesPage() {
     try {
       setLoading(true)
       const [resRes, courseRes] = await Promise.all([
-        fetch("https://quickgyan-backend.vercel.app/resources/getresource"),
-        fetch("https://quickgyan-backend.vercel.app/courses/get-courses")
+        fetch("http://localhost:8060/resources/getresource"),
+        fetch("http://localhost:8060/courses/get-courses")
       ])
       const resData = await resRes.json()
       const courseData = await courseRes.json()
-      
+
       if (resRes.ok) setRealResources(resData.resources || [])
       if (courseRes.ok) setCoursesFromDb(courseData || [])
     } catch (error) {
@@ -367,11 +367,11 @@ export default function ResourcesPage() {
             </DialogDescription>
           </DialogHeader>
           <div className="flex-1 w-full h-full rounded-lg border border-border overflow-hidden bg-black">
-             <iframe 
-                src={previewResource?.fileUrl} 
-                className="w-full h-full"
-                title="Resource Preview"
-             />
+            <iframe
+              src={previewResource?.fileUrl}
+              className="w-full h-full"
+              title="Resource Preview"
+            />
           </div>
         </DialogContent>
       </Dialog>

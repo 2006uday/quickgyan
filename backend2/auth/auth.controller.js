@@ -92,17 +92,17 @@ async function loginPost(req, res) {
 
         const refreshToken = jwt.sign(payload, JWT_SECRET, { expiresIn: "7d" });
 
-        const refreshTokenStore = await User.updateOne({ _id: user._id }, { $push: { refreshToken: refreshToken } });
+        const refreshTokenStore = await User.updateOne({ _id: user._id }, { $set: { refreshToken: [refreshToken] } });
 
         return res.cookie("accessToken", accessToken, {
             httpOnly: true,
-            secure: true,
-            sameSite: "none",
+            secure: process.env.NODE_ENV === "production",
+            sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
             maxAge: 1000 * 60 * 60 * 24,
         }).cookie("refreshToken", refreshToken, {
             httpOnly: true,
-            secure: true,
-            sameSite: "none",
+            secure: process.env.NODE_ENV === "production",
+            sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
             maxAge: 1000 * 60 * 60 * 24 * 7,
         }).status(200).json({
             message: "User logged in successfully",
@@ -262,7 +262,7 @@ async function checkAuth(req, res) {
         if (!decodedToken) {
             return res.status(401).json({ error: "Unauthorized" });
         }
-        const data = await User.findById({ _id: decodedToken.id });
+        const data = await User.findById(decodedToken.id, { password: 0, refreshToken: 0 });
         if (!data) {
             res.clearCookie("accessToken");
             res.clearCookie("refreshToken");

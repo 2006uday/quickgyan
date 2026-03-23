@@ -40,6 +40,7 @@ import {
   CloudUpload,
 } from "lucide-react"
 import { toast } from "sonner"
+import { useAuth } from "@/lib/auth-context"
 
 export default function AdminResourcesPage() {
   const [searchQuery, setSearchQuery] = useState("")
@@ -59,16 +60,23 @@ export default function AdminResourcesPage() {
   const [loading, setLoading] = useState(true)
   const [fileError, setFileError] = useState<string | null>(null)
 
+  const {
+    getResources,
+    getCourses,
+    addResource,
+    updateResource,
+    deleteResource
+  } = useAuth()
+
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1)
   const itemsPerPage = 10
 
   const fetchResources = async () => {
     try {
-      const response = await fetch("https://quickgyan-backend.vercel.app/resources/getresource")
-      const data = await response.json()
-      if (response.ok) {
-        setRealResources(data.resources || [])
+      const response = await getResources()
+      if (response.success) {
+        setRealResources(response.data.resources || [])
       }
     } catch (error) {
       console.error("Failed to fetch resources:", error)
@@ -79,9 +87,9 @@ export default function AdminResourcesPage() {
 
   const fetchCourses = async () => {
     try {
-      const response = await fetch("https://quickgyan-backend.vercel.app/courses/get-courses")
-      const data = await response.json()
-      if (response.ok) {
+      const response = await getCourses()
+      if (response.success) {
+        const data = response.data
         // Map backend field names ("Course Name", "Course Code") to UI expectation
         const formatted = (data || []).map((c: any) => ({
           id: c._id,
@@ -136,23 +144,16 @@ export default function AdminResourcesPage() {
     formData.append("file", selectedFile)
 
     try {
-      const response = await fetch("https://quickgyan-backend.vercel.app/resources/addresource", {
-        method: "POST",
-        body: formData,
-        // Don't set Content-Type header when using FormData; fetch sets it automatically with the boundary
-      })
+      const response = await addResource(formData)
 
-      const data = await response.json()
-      console.log("Upload response:", data)
-
-      if (response.ok) {
+      if (response.success) {
         toast.success("Resource uploaded successfully!")
         setIsUploadOpen(false)
         setUploadForm({ title: "", type: "", semester: "", course: "" })
         setSelectedFile(null)
         fetchResources() // Refresh the list
       } else {
-        toast.error(`Upload failed: ${data.error || "Unknown error"}`)
+        toast.error(`Upload failed: ${response.error || "Unknown error"}`)
       }
     } catch (error) {
       console.error("Upload error:", error)
@@ -184,12 +185,9 @@ export default function AdminResourcesPage() {
     }
 
     try {
-      const response = await fetch("https://quickgyan-backend.vercel.app/resources/updateresource", {
-        method: "PUT",
-        body: formData,
-      })
+      const response = await updateResource(formData)
 
-      if (response.ok) {
+      if (response.success) {
         toast.success("Resource updated successfully!")
         setIsEditOpen(false)
         setEditingResource(null)
@@ -197,8 +195,7 @@ export default function AdminResourcesPage() {
         setSelectedFile(null)
         fetchResources()
       } else {
-        const data = await response.json()
-        toast.error(`Update failed: ${data.error || "Unknown error"}`)
+        toast.error(`Update failed: ${response.error || "Unknown error"}`)
       }
     } catch (error) {
       console.error("Update error:", error)
@@ -211,17 +208,10 @@ export default function AdminResourcesPage() {
     if (!window.confirm("Are you sure you want to delete this resource?")) return
 
     const deletePromise = async () => {
-      const response = await fetch("https://quickgyan-backend.vercel.app/resources/deleteresource", {
-        method: "DELETE",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ id }),
-      })
+      const response = await deleteResource(id)
 
-      if (!response.ok) {
-        const data = await response.json()
-        throw new Error(data.error || "Failed to delete resource")
+      if (!response.success) {
+        throw new Error(response.error || "Failed to delete resource")
       }
 
       fetchResources()

@@ -19,13 +19,13 @@ export default function CoursesPage() {
     const fetchData = async () => {
       try {
         const [coursesRes, resourcesRes] = await Promise.all([
-          fetch("https://quickgyan-backend.vercel.app/courses/get-courses"),
-          fetch("https://quickgyan-backend.vercel.app/resources/getresource")
+          fetch("http://localhost:8060/courses/get-courses"),
+          fetch("http://localhost:8060/resources/getresource")
         ])
-        
+
         const coursesData = await coursesRes.json()
         const resourcesData = await resourcesRes.json()
-        
+
         if (coursesRes.ok) setCourses(coursesData)
         if (resourcesRes.ok) setResources(resourcesData.resources || [])
       } catch (error) {
@@ -49,7 +49,7 @@ export default function CoursesPage() {
 
   const filteredCourses = courses.filter((course) => {
     const semMatches = !selectedSemester || course.Semester === selectedSemester
-    const searchMatches = 
+    const searchMatches =
       course["Course Name"].toLowerCase().includes(searchQuery.toLowerCase()) ||
       course["Course Code"].toLowerCase().includes(searchQuery.toLowerCase())
     return semMatches && searchMatches
@@ -102,18 +102,16 @@ export default function CoursesPage() {
             key={sem}
             type="button"
             onClick={() => setSelectedSemester(selectedSemester === sem ? null : sem)}
-            className={`flex items-center gap-4 rounded-xl border p-4 text-left transition-all hover:border-primary/50 hover:shadow-md ${
-              selectedSemester === sem
-                ? "border-primary bg-primary/5"
-                : "border-border bg-card"
-            }`}
+            className={`flex items-center gap-4 rounded-xl border p-4 text-left transition-all hover:border-primary/50 hover:shadow-md ${selectedSemester === sem
+              ? "border-primary bg-primary/5"
+              : "border-border bg-card"
+              }`}
           >
             <div
-              className={`flex h-12 w-12 items-center justify-center rounded-lg ${
-                selectedSemester === sem
-                  ? "bg-primary text-primary-foreground"
-                  : "bg-primary/10 text-primary"
-              }`}
+              className={`flex h-12 w-12 items-center justify-center rounded-lg ${selectedSemester === sem
+                ? "bg-primary text-primary-foreground"
+                : "bg-primary/10 text-primary"
+                }`}
             >
               <span className="text-lg font-bold">{sem}</span>
             </div>
