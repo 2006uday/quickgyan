@@ -33,7 +33,7 @@ async function loginMiddleware(req: any, res: any, next: any) {
             const decodedToken = jwt.verify(token, JWT_SECRET!) as any;
             req.user = decodedToken;
             console.log("User already logged in, redirecting. decodedToken:", decodedToken);
-            return res.redirect("/home");
+            return res.redirect("/");
         }
 
         // No token — let them proceed to the login handler
@@ -97,13 +97,13 @@ async function lastActiveMiddleware(req: any, res: any, next: any) {
         const userId = req.id || (req.user as any)?.id;
         if (userId) {
             const user = await User.findByIdAndUpdate(userId, { lastActive: new Date() }, { new: true });
-            
+
             if (!user) {
                 res.clearCookie("accessToken");
                 res.clearCookie("refreshToken");
                 return res.status(401).json({ error: "Unauthorized: User account no longer exists." });
             }
-            
+
             if (user.status === "suspended") {
                 res.clearCookie("accessToken");
                 res.clearCookie("refreshToken");
