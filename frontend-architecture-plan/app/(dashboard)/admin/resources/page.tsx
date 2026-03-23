@@ -65,7 +65,7 @@ export default function AdminResourcesPage() {
 
   const fetchResources = async () => {
     try {
-      const response = await fetch("http://localhost:8060/resources/getresource")
+      const response = await fetch("https://quickgyan-backend.vercel.app/resources/getresource")
       const data = await response.json()
       if (response.ok) {
         setRealResources(data.resources || [])
@@ -79,7 +79,7 @@ export default function AdminResourcesPage() {
 
   const fetchCourses = async () => {
     try {
-      const response = await fetch("http://localhost:8060/courses/get-courses")
+      const response = await fetch("https://quickgyan-backend.vercel.app/courses/get-courses")
       const data = await response.json()
       if (response.ok) {
         // Map backend field names ("Course Name", "Course Code") to UI expectation
@@ -136,7 +136,7 @@ export default function AdminResourcesPage() {
     formData.append("file", selectedFile)
 
     try {
-      const response = await fetch("http://localhost:8060/resources/addresource", {
+      const response = await fetch("https://quickgyan-backend.vercel.app/resources/addresource", {
         method: "POST",
         body: formData,
         // Don't set Content-Type header when using FormData; fetch sets it automatically with the boundary
@@ -184,7 +184,7 @@ export default function AdminResourcesPage() {
     }
 
     try {
-      const response = await fetch("http://localhost:8060/resources/updateresource", {
+      const response = await fetch("https://quickgyan-backend.vercel.app/resources/updateresource", {
         method: "PUT",
         body: formData,
       })
@@ -211,7 +211,7 @@ export default function AdminResourcesPage() {
     if (!window.confirm("Are you sure you want to delete this resource?")) return
 
     const deletePromise = async () => {
-      const response = await fetch("http://localhost:8060/resources/deleteresource", {
+      const response = await fetch("https://quickgyan-backend.vercel.app/resources/deleteresource", {
         method: "DELETE",
         headers: {
           "Content-Type": "application/json",

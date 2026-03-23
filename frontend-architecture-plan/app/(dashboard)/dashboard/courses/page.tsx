@@ -19,8 +19,8 @@ export default function CoursesPage() {
     const fetchData = async () => {
       try {
         const [coursesRes, resourcesRes] = await Promise.all([
-          fetch("http://localhost:8060/courses/get-courses"),
-          fetch("http://localhost:8060/resources/getresource")
+          fetch("https://quickgyan-backend.vercel.app/courses/get-courses"),
+          fetch("https://quickgyan-backend.vercel.app/resources/getresource")
         ])
         
         const coursesData = await coursesRes.json()

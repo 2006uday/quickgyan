@@ -263,11 +263,11 @@ async function checkAuth(req, res) {
             return res.status(401).json({ error: "Unauthorized" });
         }
         const data = await User.findById({ _id: decodedToken.id });
-        if (!data) {
-            res.clearCookie("accessToken");
-            res.clearCookie("refreshToken");
-            return res.status(401).json({ error: "User not found or unauthorized" });
-        }
+    //    if (!data) {
+    //         res.clearCookie("accessToken");
+    //         res.clearCookie("refreshToken");
+    //         return res.status(401).json({ error: "User not found or unauthorized" });
+    //     } 
         return res.status(200).json({ message: "User is authorized", user: data });
     } catch (error) {
         console.log(error);

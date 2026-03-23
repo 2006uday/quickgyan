@@ -66,8 +66,8 @@ interface AuthContextType {
 // Base URL — change once, works everywhere
 // ---------------------------------------------------------------------------
 
-const API_BASE = "http://localhost:8060/auth"
-const API_BASE_AI = "http://localhost:8060/ai-chat"
+const API_BASE = "https://quickgyan-backend.vercel.app/auth"
+const API_BASE_AI = "https://quickgyan-backend.vercel.app/ai-chat"
 
 
 const axiosConfig = {
@@ -137,7 +137,7 @@ export function AuthProvider({ children, initialUser }: { children: ReactNode, i
     id: string
   ): Promise<{ success: boolean; error?: string }> => {
     try {
-      const res = await axios.put(`http://localhost:8060/courses/update-course`, { courseName, courseCode, credits, semester, id }, axiosConfig)
+      const res = await axios.put(`https://quickgyan-backend.vercel.app/courses/update-course`, { courseName, courseCode, credits, semester, id }, axiosConfig)
       if (res.data?.user) {
         const u = res.data.user;
         const userData: User = {
@@ -167,7 +167,7 @@ export function AuthProvider({ children, initialUser }: { children: ReactNode, i
     try {
       console.log("data : ", data);
 
-      const res = await axios.put(`http://localhost:8060/auth/update`, data, axiosConfig)
+      const res = await axios.put(`https://quickgyan-backend.vercel.app/auth/update`, data, axiosConfig)
       if (res.data?.user) {
         const u = res.data.user;
         const userData: User = {
@@ -289,7 +289,7 @@ export function AuthProvider({ children, initialUser }: { children: ReactNode, i
     }
     try {
       // 1. Register the user
-      await axios.post('http://localhost:8060/auth/signup', {
+      await axios.post('https://quickgyan-backend.vercel.app/auth/signup', {
         username: data.name,
         email: data.email,
         enrollment_no: data.enrollmentNo,
@@ -317,7 +317,7 @@ export function AuthProvider({ children, initialUser }: { children: ReactNode, i
       console.log("axiosConfig : ", axiosConfig);
       console.log("API_BASE : ", API_BASE);
       await new Promise(resolve => setTimeout(resolve, 10));
-      await axios.get(`http://localhost:8060/auth/logout`, {
+      await axios.get(`https://quickgyan-backend.vercel.app/auth/logout`, {
         headers: {
           'Content-Type': 'application/json',
           'Accept': 'application/json'
@@ -370,7 +370,7 @@ export function AuthProvider({ children, initialUser }: { children: ReactNode, i
 
   const addCourses = async (courseName: string, courseCode: string, credits: number, semester: number): Promise<{ success: boolean; error?: string }> => {
     try {
-      const res = await axios.post(`http://localhost:8060/courses/add-course`, { courseName, courseCode, credits, semester }, axiosConfig)
+      const res = await axios.post(`https://quickgyan-backend.vercel.app/courses/add-course`, { courseName, courseCode, credits, semester }, axiosConfig)
       return { success: true }
     } catch (err) {
       return { success: false, error: extractError(err, "Failed to add course. Please try again.") }
@@ -379,7 +379,7 @@ export function AuthProvider({ children, initialUser }: { children: ReactNode, i
 
   const getCourses = async (): Promise<{ success: boolean; data?: any; error?: string }> => {
     try {
-      const res = await axios.get(`http://localhost:8060/courses/get-courses`, axiosConfig)
+      const res = await axios.get(`https://quickgyan-backend.vercel.app/courses/get-courses`, axiosConfig)
       return { success: true, data: res.data }
     } catch (err) {
       return { success: false, error: extractError(err, "Failed to get courses. Please try again.") }
@@ -388,7 +388,7 @@ export function AuthProvider({ children, initialUser }: { children: ReactNode, i
 
   const deleteCourse = async (id: string): Promise<{ success: boolean; error?: string }> => {
     try {
-      await axios.delete(`http://localhost:8060/courses/delete-course`, {
+      await axios.delete(`https://quickgyan-backend.vercel.app/courses/delete-course`, {
         ...axiosConfig,
         data: { id }
       })
@@ -466,7 +466,7 @@ export function AuthProvider({ children, initialUser }: { children: ReactNode, i
 
   const getResources = async (): Promise<{ success: boolean; data?: any; error?: string }> => {
     try {
-      const res = await axios.get(`http://localhost:8060/resources/getresource`, axiosConfig)
+      const res = await axios.get(`https://quickgyan-backend.vercel.app/resources/getresource`, axiosConfig)
       return { success: true, data: res.data }
     } catch (err) {
       return { success: false, error: extractError(err, "Failed to get resources.") }
@@ -475,7 +475,7 @@ export function AuthProvider({ children, initialUser }: { children: ReactNode, i
 
   const addAnnouncement = async (title: string, content: string) => {
     try {
-      await axios.post(`http://localhost:8060/announcements/add`, { title, content }, axiosConfig)
+      await axios.post(`https://quickgyan-backend.vercel.app/announcements/add`, { title, content }, axiosConfig)
       return { success: true }
     } catch (err) {
       return { success: false, error: extractError(err, "Failed to add announcement") }
@@ -484,7 +484,7 @@ export function AuthProvider({ children, initialUser }: { children: ReactNode, i
 
   const getAnnouncements = async () => {
     try {
-      const res = await axios.get(`http://localhost:8060/announcements/get`, axiosConfig)
+      const res = await axios.get(`https://quickgyan-backend.vercel.app/announcements/get`, axiosConfig)
       return { success: true, data: res.data }
     } catch (err) {
       return { success: false, error: extractError(err, "Failed to fetch announcements") }
@@ -493,7 +493,7 @@ export function AuthProvider({ children, initialUser }: { children: ReactNode, i
 
   const getNotifications = async () => {
     try {
-      const res = await axios.get(`http://localhost:8060/notifications`, axiosConfig)
+      const res = await axios.get(`https://quickgyan-backend.vercel.app/notifications`, axiosConfig)
       return { success: true, data: res.data }
     } catch (err) {
       return { success: false, error: extractError(err, "Failed to fetch notifications") }
@@ -502,7 +502,7 @@ export function AuthProvider({ children, initialUser }: { children: ReactNode, i
 
   const markNotificationAsRead = async (id: string) => {
     try {
-      await axios.put(`http://localhost:8060/notifications/mark-read`, { id }, axiosConfig)
+      await axios.put(`https://quickgyan-backend.vercel.app/notifications/mark-read`, { id }, axiosConfig)
       return { success: true }
     } catch (err) {
       return { success: false, error: extractError(err, "Failed to mark notification as read") }
