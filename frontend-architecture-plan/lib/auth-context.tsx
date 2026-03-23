@@ -70,7 +70,7 @@ interface AuthContextType {
 // Base URL — change once, works everywhere
 // ---------------------------------------------------------------------------
 
-const API_BASE_URL = "http://localhost:8060"
+const API_BASE_URL = "https://quickgyan-backend.vercel.app"
 const API_BASE = `${API_BASE_URL}/auth`
 const API_BASE_AI = `${API_BASE_URL}/ai-chat`
 const API_BASE_COURSES = `${API_BASE_URL}/courses`
