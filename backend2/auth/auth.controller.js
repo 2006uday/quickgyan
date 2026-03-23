@@ -96,13 +96,13 @@ async function loginPost(req, res) {
 
         return res.cookie("accessToken", accessToken, {
             httpOnly: true,
-            secure: process.env.NODE_ENV === "production",
-            sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+            secure: true,
+            sameSite: "lax",
             maxAge: 1000 * 60 * 60 * 24,
         }).cookie("refreshToken", refreshToken, {
             httpOnly: true,
-            secure: process.env.NODE_ENV === "production",
-            sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+            secure: true,
+            sameSite: "lax",
             maxAge: 1000 * 60 * 60 * 24 * 7,
         }).status(200).json({
             message: "User logged in successfully",
