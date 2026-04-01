@@ -71,12 +71,16 @@ const OtpSchema = new mongoose.Schema(
         },
         expiresAt: {
             type: Date,
-            default: new Date(Date.now() + 2 * 60 * 1000)
+            default: () => new Date(Date.now() + 2 * 60 * 1000)
         },
         status: {
             type: String,
             enum: ["pending", "verified", "expired"],
             default: "pending"
+        },
+        userData: {
+            type: Object,
+            default: null
         }
     },
     {

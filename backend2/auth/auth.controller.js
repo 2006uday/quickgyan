@@ -10,12 +10,10 @@ const JWT_SECRET = process.env.JWT_SECRET;
 if (!JWT_SECRET) throw new Error("JWT_SECRET is not defined in .env");
 
 async function userPost(req, res) {
-    console.log("userPost : ", req.body);
+    console.log("userPost - Requesting registration: ", req.body.email);
 
     try {
         const { username, enrollment_no, email, password } = req.body;
-
-        const hashPassword = await bcrypt.hash(password, 10);
 
         if (!username || !enrollment_no || !email || !password) {
             return res.status(400).json({ error: "All fields are required" });
@@ -29,32 +27,45 @@ async function userPost(req, res) {
             return res.status(400).json({ error: "Username must be at least 3 characters long" });
         }
 
-
+        // Check if user already exists
         const alreadyUser = await User.findOne({ email });
         if (alreadyUser) {
             return res.status(400).json({ error: "User already exists" });
         }
 
-        const user = await User.create({
-            username,
+        const hashPassword = await bcrypt.hash(password, 10);
+        const otp = Math.floor(100000 + Math.random() * 900000);
+
+        // Store registration details temporarily in OTP document
+        await Otp.deleteOne({ email });
+        await Otp.create({
             email,
-            enrollment_no,
-            password: hashPassword,
+            otp,
+            userData: { username, email, enrollment_no, password: hashPassword }
         });
 
-        return res.status(201).json({
-            message: "User registered successfully",
-            user: {
-                id: user._id,
-                username: user.username,
-                email: user.email,
-                enrollment_no: user.enrollment_no,
-                lastActive: user.lastActive,
+        const transporter = nodemailer.createTransport({
+            service: "gmail",
+            auth: {
+                user: process.env.EMAIL,
+                pass: process.env.PASSWORD,
             },
         });
+
+        const mailOptions = {
+            from: process.env.EMAIL,
+            to: email,
+            subject: "Verification OTP for QuickGyan",
+            text: `Your OTP for account registration is ${otp}. It will expire in 2 minutes.`,
+        };
+
+        await transporter.sendMail(mailOptions);
+        console.log("Signup OTP sent to: " + email);
+
+        return res.status(200).json({ message: "OTP sent successfully to your email" });
     } catch (error) {
         console.log(error);
-        return res.status(500).json({ error: "Internal server error" });
+        return res.status(500).json({ error: "Internal server error during signup" });
     }
 }
 
@@ -126,17 +137,22 @@ async function otpPost(req, res) {
         const { email } = req.body;
         const otp = Math.floor(100000 + Math.random() * 900000);
 
+        let existingUserData = null;
+
         if (email) {
-            const sameEmail = await Otp.findOne({ email });
-            if (sameEmail) {
-                const deleteOtp = await Otp.deleteOne({ email });
-                if (deleteOtp) {
-                    return res.status(400).json({ error: "OTP already sent" });
-                }
+            const currentOtp = await Otp.findOne({ email });
+            if (currentOtp) {
+                existingUserData = currentOtp.userData; // Preserve details if resending during signup
+                await Otp.deleteOne({ email });
             }
         }
 
-        const otpStore = await Otp.create({ email, otp });
+        // Create new OTP document with potential userData
+        await Otp.create({
+            email,
+            otp,
+            userData: existingUserData
+        });
 
         const transporter = nodemailer.createTransport({
             service: "gmail",
@@ -148,23 +164,18 @@ async function otpPost(req, res) {
 
         const mailOptions = {
             from: process.env.EMAIL,
-            to,
-            subject: "OTP for login",
-            text: `Your OTP is ${otp}`,
+            to: email,
+            subject: "Verification OTP",
+            text: `Your OTP is ${otp}. It will expire in 2 minutes.`,
         };
 
-        transporter.sendMail(mailOptions, (error, info) => {
-            if (error) {
-                console.log(error);
-                return res.status(500).json({ error: "Internal server error" });
-            }
-            console.log("Email sent: " + info.response);
-        });
+        await transporter.sendMail(mailOptions);
+        console.log("OTP (resend/login) sent to: " + email);
 
         return res.status(200).json({ message: "OTP sent successfully" });
     } catch (error) {
         console.log(error);
-        return res.status(500).json({ error: "Internal server error" });
+        return res.status(500).json({ error: "Internal server error during OTP send" });
     }
 }
 
@@ -172,32 +183,59 @@ async function otpVerifyPost(req, res) {
     try {
         const { email, otp } = req.body;
 
-        const user = await User.find({ email });
-        console.log(user);
-
-        if (!user) {
-            return res.status(400).json({ error: "User not found" });
-        }
-        console.log("email : ", email);
-
         const otpStore = await Otp.findOne({ email });
         if (!otpStore) {
             return res.status(400).json({ error: "OTP not found" });
         }
 
-        console.log("otpStore.otp : ", otpStore.otp);
-        console.log("otp : ", otp);
+        // Check if OTP has expired
+        if (otpStore.expiresAt < new Date()) {
+            await Otp.deleteOne({ email });
+            return res.status(400).json({ error: "OTP has expired" });
+        }
 
-        if (otpStore.otp !== Number(otp)) {
+        if (Number(otpStore.otp) !== Number(otp)) {
             return res.status(400).json({ error: "Invalid OTP" });
         }
-        console.log("OTP verified successfully");
+
+        let user;
+        // If userData was present, finalize signup by creating the User document
+        if (otpStore.userData) {
+            // Final check to see if someone registered with this email while we were waiting for OTP
+            const alreadyUser = await User.findOne({ email });
+            if (alreadyUser) {
+                await Otp.deleteOne({ email });
+                return res.status(400).json({ error: "Email already registered" });
+            }
+
+            user = await User.create(otpStore.userData);
+            console.log("Account created successfully after verification");
+        } else {
+            // This case might be for a login-based OTP if implemented later
+            user = await User.findOne({ email });
+            if (!user) {
+                return res.status(400).json({ error: "User not found" });
+            }
+        }
+
         await Otp.deleteOne({ email });
 
-        return res.status(200).json({ message: "OTP verified successfully" });
+        // Build response user object
+        const userData = {
+            id: user._id,
+            username: user.username,
+            email: user.email,
+            enrollment_no: user.enrollment_no,
+            lastActive: user.lastActive,
+        };
+
+        return res.status(200).json({
+            message: "OTP verified and account created successfully",
+            user: userData
+        });
     } catch (error) {
         console.log(error);
-        return res.status(500).json({ error: "Internal server error" });
+        return res.status(500).json({ error: "Internal server error during verification" });
     }
 }
 

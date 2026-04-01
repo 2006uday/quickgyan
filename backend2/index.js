@@ -21,7 +21,7 @@ const PORT = process.env.PORT || 8060;
 app.use(cookieParser());
 app.use(
     cors({
-        origin: [process.env.FRONTEND_URL || "https://quickgyan.vercel.app", "http://localhost:3000"],
+        origin: [process.env.FRONTEND_URL || "https://quickgyan.vercel.app" || "http://localhost:3000"],
         credentials: true,
     })
 );

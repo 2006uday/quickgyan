@@ -8,12 +8,12 @@ const footerLinks = {
     { name: "AI Assistant", href: "/dashboard/ai-chat" },
   ],
   support: [
-    { name: "Help Center", href: "#" },
-    { name: "Contact Us", href: "#contact" },
-    { name: "FAQs", href: "#" },
+    { name: "Help Center", href: "/help-support" },
+    { name: "Contact Us", href: "/contact-us" },
+    { name: "FAQs", href: "/help-support" },
   ],
   legal: [
-    { name: "Privacy Policy", href: "#" },
+    { name: "Privacy Policy", href: "/privacy-policy" },
     { name: "Terms of Service", href: "#" },
   ],
 }

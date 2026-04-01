@@ -70,7 +70,7 @@ interface AuthContextType {
 // Base URL — change once, works everywhere
 // ---------------------------------------------------------------------------
 
-const API_BASE_URL = "https://quickgyan-backend.vercel.app"
+const API_BASE_URL = "https://localhost:8060/"
 const API_BASE = `${API_BASE_URL}/auth`
 const API_BASE_AI = `${API_BASE_URL}/ai-chat`
 const API_BASE_COURSES = `${API_BASE_URL}/courses`
@@ -289,15 +289,8 @@ export function AuthProvider({ children, initialUser }: { children: ReactNode, i
   const signup = async (
     data: SignupData,
   ): Promise<{ success: boolean; error?: string }> => {
-    // 2. Trigger OTP dispatch to the registered email
-    const otpResult = await sendOtp(data.email)
-    if (!otpResult.success) {
-      // Registration succeeded but OTP dispatch failed — still let the page
-      // know signup was ok; it can offer a resend button.
-      console.warn("Signup succeeded but OTP send failed:", otpResult.error)
-    }
     try {
-      // 1. Register the user
+      // Register the user (Backend now handles storing data + sending OTP in one go)
       await axios.post(`${API_BASE}/signup`, {
         username: data.name,
         email: data.email,
@@ -307,7 +300,8 @@ export function AuthProvider({ children, initialUser }: { children: ReactNode, i
         headers: {
           'Content-Type': 'application/json',
           'Accept': 'application/json'
-        }
+        },
+        withCredentials: true
       })
 
       return { success: true }
