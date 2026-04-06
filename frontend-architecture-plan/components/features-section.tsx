@@ -1,3 +1,4 @@
+// features-section component
 import { BookOpen, Clock, FileText, Brain, Shield, Search } from "lucide-react"
 
 const features = [

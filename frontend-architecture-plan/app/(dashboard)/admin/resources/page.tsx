@@ -320,7 +320,7 @@ export default function AdminResourcesPage() {
                       .filter(
                         (c) =>
                           !uploadForm.semester ||
-                          c.semester === parseInt(uploadForm.semester)
+                          Number(c.semester) === Number(uploadForm.semester)
                       )
                       .map((course) => (
                         <SelectItem key={course.id} value={course.code}>
@@ -460,7 +460,7 @@ export default function AdminResourcesPage() {
                       .filter(
                         (c) =>
                           !uploadForm.semester ||
-                          c.semester === parseInt(uploadForm.semester)
+                          Number(c.semester) === Number(uploadForm.semester)
                       )
                       .map((course) => (
                         <SelectItem key={course.id} value={course.code}>

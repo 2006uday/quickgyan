@@ -1,9 +1,12 @@
-
+/**
+ * Controllers for managing user notifications within the application.
+ * This includes fetching unread notifications and marking them as read.
+ */
 import Notification from './notification.models.js';
 
 async function getNotifications(req, res) {
     try {
-        const userId = req.user.id;
+        const userId = req.user.id
         if (!userId) { return res.status(401).json({ error: "Unauthorized" }); }
 
         const notifications = await Notification.find({ userId })

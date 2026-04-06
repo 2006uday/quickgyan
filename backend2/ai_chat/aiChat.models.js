@@ -1,3 +1,7 @@
+/**
+ * Mongoose schema and model for storing AI chat interactions.
+ * Messages include userId, role (user or model), and content with expiration logic.
+ */
 import mongoose from "mongoose";
 
 const chatMessageSchema = new mongoose.Schema({

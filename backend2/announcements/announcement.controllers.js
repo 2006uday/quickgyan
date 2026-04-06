@@ -1,3 +1,7 @@
+/**
+ * Controllers for managing system-wide announcements.
+ * Includes logic to add, retrieve, and delete announcements, and notify users in bulk.
+ */
 import Announcement from './announcement.models.js';
 
 import { User } from '../auth/auth.model.js';

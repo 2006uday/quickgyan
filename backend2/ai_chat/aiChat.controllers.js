@@ -1,4 +1,7 @@
-
+/**
+ * Controllers for interacting with the Google Gemini AI model.
+ * Handles user requests, maintains chat history, and provides conversation context.
+ */
 import { GoogleGenAI } from "@google/genai";
 import ChatMessage from './aiChat.models.js';
 

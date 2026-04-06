@@ -1,4 +1,7 @@
-
+/**
+ * Controllers for user authentication, registration, and account management.
+ * Handles login, signup, OTP verification, password changes, and administrative user actions.
+ */
 import bcrypt from "bcrypt";
 import { User, Otp } from './auth.model.js';
 import jwt from "jsonwebtoken";
@@ -9,9 +12,10 @@ dotenv.config();
 const JWT_SECRET = process.env.JWT_SECRET;
 if (!JWT_SECRET) throw new Error("JWT_SECRET is not defined in .env");
 
+
+// user can be sign-up their account
 async function userPost(req, res) {
     console.log("userPost - Requesting registration: ", req.body.email);
-
     try {
         const { username, enrollment_no, email, password } = req.body;
 
@@ -74,7 +78,7 @@ async function loginPost(req, res) {
     try {
 
         const { email, password } = req.body;
-
+        console.log();
         if (!email || !password) {
             return res.status(400).json({ error: "All fields are required" });
         }
@@ -249,6 +253,8 @@ async function allOtpDelete(req, res) {
     }
 }
 
+
+// user can be logout their account
 async function logoutPost(req, res) {
     console.log("logoutPost");
     try {

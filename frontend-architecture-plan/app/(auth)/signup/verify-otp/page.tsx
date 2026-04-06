@@ -79,7 +79,7 @@ export default function VerifyOtpPage() {
         if (result.success) {
             // verifyOtp already sets user in context + localStorage
             // so the dashboard AuthProvider will hydrate the session correctly
-            router.push('/dashboard')
+            router.push('/login')
         } else {
             setIsLoading(false)
             setError(result.error || "Invalid OTP. Please try again.")

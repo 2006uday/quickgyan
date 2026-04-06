@@ -1,3 +1,7 @@
+/**
+ * This file defines the Mongoose schema and model for academic courses.
+ * It includes fields for course identification, credits, and semester associations.
+ */
 import mongoose from "mongoose"
 
 const courseSchema = new mongoose.Schema(

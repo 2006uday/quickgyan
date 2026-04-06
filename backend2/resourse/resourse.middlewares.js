@@ -1,4 +1,7 @@
-
+/**
+ * Middlewares for handling file uploads and Cloudinary configuration.
+ * Sets up Multer for memory storage and defines file filtering rules for uploads.
+ */
 import multer from 'multer';
 import { v2 as cloudinary } from 'cloudinary';
 

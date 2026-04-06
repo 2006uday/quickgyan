@@ -1,3 +1,7 @@
+/**
+ * This file defines the Mongoose schemas and models for user authentication and verification.
+ * It includes schemas for User profiles and One-Time Passwords (OTP) used in the signup process.
+ */
 import mongoose from 'mongoose';
 
 const UserSchema = new mongoose.Schema(

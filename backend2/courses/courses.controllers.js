@@ -1,3 +1,7 @@
+/**
+ * Controllers for managing courses, including handling HTTP requests for CRUD operations.
+ * This file also includes logic for notifying users when new courses are added.
+ */
 import courseSchema from './courses.models.js';
 
 import { User } from '../auth/auth.model.js';
@@ -108,7 +112,7 @@ async function updateCourse(req, res) {
             return res.status(400).json({ message: "Request body is required" })
         }
         const { courseName, courseCode, credits, semester, id } = body;
-        if (id || courseName || courseCode || credits || semester) {
+        if (!id || !courseName || !courseCode || credits === undefined || semester === undefined) {
             return res.status(400).json({ message: "All fields are required (courseName, courseCode, credits, semester, id)" })
         }
 

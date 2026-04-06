@@ -1,3 +1,7 @@
+/**
+ * Middlewares for authentication and authorization using JSON Web Tokens (JWT).
+ * Includes functions for verifying access tokens, checking user roles, and tracking activity.
+ */
 import jwt from "jsonwebtoken";
 import dotenv from "dotenv";
 import { User } from './auth.model.js';

@@ -1,3 +1,7 @@
+/**
+ * This router defines HTTP end-points for course-related operations.
+ * It provides functionality for adding, listing, updating, and deleting courses.
+ */
 import { Router } from "express";
 import controller from './courses.controllers.js';
 

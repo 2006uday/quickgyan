@@ -1,3 +1,7 @@
+/**
+ * API routes for AI chat functionality.
+ * Supports chatting with AI, retrieving chat history, and clearing history for a user.
+ */
 import Router from "express";
 import controller from './aiChat.controllers.js';
 import authMiddleware from '../auth/auth.middleware.js';

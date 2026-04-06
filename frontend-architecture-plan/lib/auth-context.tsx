@@ -53,7 +53,8 @@ interface AuthContextType {
   updateUserStatus: (id: string, status: string) => Promise<{ success: boolean; error?: string }>
   sendAccountStatusEmail: (id: string) => Promise<{ success: boolean; error?: string }>
   deleteUserByAdmin: (id: string) => Promise<{ success: boolean; error?: string }>
-  getResources: () => Promise<{ success: boolean; data?: any; error?: string }>
+  getResources: (params?: any) => Promise<{ success: boolean; data?: any; error?: string }>
+  getResourceById: (id: string) => Promise<{ success: boolean; data?: any; error?: string }>
   addAnnouncement: (title: string, content: string) => Promise<{ success: boolean; error?: string }>
   getAnnouncements: () => Promise<{ success: boolean; data?: any; error?: string }>
   getNotifications: () => Promise<{ success: boolean; data?: any; error?: string }>
@@ -70,7 +71,7 @@ interface AuthContextType {
 // Base URL — change once, works everywhere
 // ---------------------------------------------------------------------------
 
-const API_BASE_URL = "https://localhost:8060/"
+const API_BASE_URL = "http://localhost:8060"
 const API_BASE = `${API_BASE_URL}/auth`
 const API_BASE_AI = `${API_BASE_URL}/ai-chat`
 const API_BASE_COURSES = `${API_BASE_URL}/courses`
@@ -467,12 +468,24 @@ export function AuthProvider({ children, initialUser }: { children: ReactNode, i
     }
   }
 
-  const getResources = async (): Promise<{ success: boolean; data?: any; error?: string }> => {
+  const getResources = async (params?: any): Promise<{ success: boolean; data?: any; error?: string }> => {
     try {
-      const res = await axios.get(`${API_BASE_RESOURCES}/getresource`, axiosConfig)
+      const res = await axios.get(`${API_BASE_RESOURCES}/getresource`, {
+        ...axiosConfig,
+        params
+      })
       return { success: true, data: res.data }
     } catch (err) {
       return { success: false, error: extractError(err, "Failed to get resources.") }
+    }
+  }
+
+  const getResourceById = async (id: string): Promise<{ success: boolean; data?: any; error?: string }> => {
+    try {
+      const res = await axios.get(`${API_BASE_RESOURCES}/getresource/${id}`, axiosConfig)
+      return { success: true, data: res.data }
+    } catch (err) {
+      return { success: false, error: extractError(err, "Failed to get resource details.") }
     }
   }
 
@@ -610,6 +623,7 @@ export function AuthProvider({ children, initialUser }: { children: ReactNode, i
       sendAccountStatusEmail,
       deleteUserByAdmin,
       getResources,
+      getResourceById,
       addAnnouncement,
       getAnnouncements,
       getNotifications,

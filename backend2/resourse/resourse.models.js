@@ -1,3 +1,7 @@
+/**
+ * This schema defines educational resources such as books, notes, and papers.
+ * It includes metadata for categorization (semester, course) and Cloudinary file tracking.
+ */
 import mongoose from "mongoose";
 
 const resourceSchema = new mongoose.Schema({

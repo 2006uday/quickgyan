@@ -1,3 +1,7 @@
+/**
+ * Controllers for handling educational resource uploads and management.
+ * Integrates with Cloudinary for file storage and provides status updates to users.
+ */
 import multer from 'multer';
 import { v2 as cloudinary } from 'cloudinary';
 
@@ -29,6 +33,8 @@ async function createBulkNotifications(resourceTitle, resourceType, course) {
     }
 }
 
+
+// admin can be upload their resourse
 async function uploadResourse(req, res) { // Using 'any' for 'req' to avoid 'file is possibly undefined' error
     try {
         const { resourceTitle, resourceType, semester, course } = req.body;
@@ -47,7 +53,7 @@ async function uploadResourse(req, res) { // Using 'any' for 'req' to avoid 'fil
 
         // Upload to Cloudinary
         const result = await cloudinary.uploader.upload(dataURI, {
-            folder,
+            folder: folderName,
             resource_type: "auto",
         });
 
@@ -83,7 +89,20 @@ async function uploadResourse(req, res) { // Using 'any' for 'req' to avoid 'fil
 }
 async function getResource(req, res) {
     try {
-        const resources = await Resource.find().sort({ createdAt: -1 });
+        const { search, semester, type, courseCode } = req.query;
+        let query = {};
+
+        if (semester) query.semester = semester;
+        if (type) query.resourceType = type;
+        if (courseCode) query.course = courseCode;
+        if (search) {
+            query.$or = [
+                { resourceTitle: { $regex: search, $options: 'i' } },
+                { course: { $regex: search, $options: 'i' } }
+            ];
+        }
+
+        const resources = await Resource.find(query).sort({ createdAt: -1 });
         return res.status(200).json({ resources });
     }
     catch (error) {
@@ -93,6 +112,21 @@ async function getResource(req, res) {
         });
     }
 }
+async function getResourceById(req, res) {
+    try {
+        const { id } = req.params;
+        const resource = await Resource.findById(id);
+        if (!resource) {
+            return res.status(404).json({ error: "Resource not found" });
+        }
+        return res.status(200).json({ resource });
+    }
+    catch (error) {
+        console.error("Get resource by ID error:", error);
+        return res.status(500).json({ error: "Internal server error" });
+    }
+}
+
 async function updateResource(req, res) {
     try {
         const { id, resourceTitle, resourceType, semester, course } = req.body;
@@ -125,7 +159,7 @@ async function updateResource(req, res) {
             const dataURI = "data:" + req.file.mimetype + ";base64," + b64;
 
             const result = await cloudinary.uploader.upload(dataURI, {
-                folder,
+                folder: folderName,
                 resource_type: "auto",
             });
 
@@ -173,4 +207,4 @@ async function deleteResource(req, res) {
     }
 }
 
-export default { uploadResourse, getResource, updateResource, deleteResource }
+export default { uploadResourse, getResource, getResourceById, updateResource, deleteResource }

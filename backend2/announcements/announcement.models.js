@@ -1,3 +1,7 @@
+/**
+ * Mongoose schema and model for educational announcements.
+ * Announcements have titles, contents, and an automatic expiration period.
+ */
 import mongoose from "mongoose";
 
 const announcementSchema = new mongoose.Schema({

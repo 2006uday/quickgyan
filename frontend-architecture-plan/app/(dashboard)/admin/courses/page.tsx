@@ -352,7 +352,7 @@ export default function AdminCoursesPage() {
               </div>
               <p className="text-sm font-medium">Semester {sem.id}</p>
               <p className="text-xs text-muted-foreground">
-                {courses.filter(c => c.semester === sem.id).length} courses
+                {courses.filter(c => Number(c.semester) === sem.id).length} courses
               </p>
             </CardContent>
           </Card>

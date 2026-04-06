@@ -6,6 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
+import { useAuth } from "@/lib/auth-context"
 import { Search, BookOpen, ChevronRight, GraduationCap, Loader2 } from "lucide-react"
 
 export default function CoursesPage() {
@@ -14,20 +15,18 @@ export default function CoursesPage() {
   const [courses, setCourses] = useState<any[]>([])
   const [resources, setResources] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
+  const { getCourses, getResources } = useAuth()
 
   useEffect(() => {
     const fetchData = async () => {
       try {
         const [coursesRes, resourcesRes] = await Promise.all([
-          fetch("https://quickgyan-backend.vercel.app/courses/get-courses"),
-          fetch("https://quickgyan-backend.vercel.app/resources/getresource")
+          getCourses(),
+          getResources()
         ])
 
-        const coursesData = await coursesRes.json()
-        const resourcesData = await resourcesRes.json()
-
-        if (coursesRes.ok) setCourses(coursesData)
-        if (resourcesRes.ok) setResources(resourcesData.resources || [])
+        if (coursesRes.success) setCourses(coursesRes.data)
+        if (resourcesRes.success) setResources(resourcesRes.data.resources || [])
       } catch (error) {
         console.error("Failed to fetch dashboard data:", error)
       } finally {
@@ -35,7 +34,7 @@ export default function CoursesPage() {
       }
     }
     fetchData()
-  }, [])
+  }, [getCourses, getResources])
 
   const getResourceCount = (courseCode: string) => {
     return resources.filter(r => r.course === courseCode).length

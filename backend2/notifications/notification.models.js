@@ -1,3 +1,7 @@
+/**
+ * This file defines the Mongoose schema and model for user notifications.
+ * It includes fields for user association, messaging content, and read status tracking.
+ */
 import mongoose from "mongoose";
 
 const notificationSchema = new mongoose.Schema({

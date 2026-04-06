@@ -2,6 +2,7 @@
 
 import { useState, useMemo } from "react"
 import { useSearchParams } from "next/navigation"
+import { useAuth } from "@/lib/auth-context"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
@@ -68,18 +69,18 @@ export default function ResourcesPage() {
   const [currentPage, setCurrentPage] = useState(1)
   const itemsPerPage = 12 // Using 12 for better grid alignment (3x4 or 2x6)
 
+  const { getResources, getCourses } = useAuth()
+
   const fetchAllData = async () => {
     try {
       setLoading(true)
-      const [resRes, courseRes] = await Promise.all([
-        fetch("https://quickgyan-backend.vercel.app/resources/getresource"),
-        fetch("https://quickgyan-backend.vercel.app/courses/get-courses")
+      const [resResponse, courseResponse] = await Promise.all([
+        getResources(),
+        getCourses()
       ])
-      const resData = await resRes.json()
-      const courseData = await courseRes.json()
 
-      if (resRes.ok) setRealResources(resData.resources || [])
-      if (courseRes.ok) setCoursesFromDb(courseData || [])
+      if (resResponse.success) setRealResources(resResponse.data.resources || [])
+      if (courseResponse.success) setCoursesFromDb(courseResponse.data || [])
     } catch (error) {
       console.error("Failed to fetch library data:", error)
     } finally {
