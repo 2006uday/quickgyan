@@ -1,3 +1,8 @@
+import { setServers } from "node:dns/promises";
+if (process.env.NODE_ENV !== 'production') {
+    setServers(["1.1.1.1", "8.8.8.8"]);
+}
+
 /**
  * Main entry point for the QuickGyan backend server.
  * This file initializes Express, connects to the database, and sets up all routes and middleware.
@@ -130,4 +135,4 @@ if (process.env.NODE_ENV !== 'production' || !process.env.VERCEL) {
     });
 }
 
-export default app;
+export default app;
