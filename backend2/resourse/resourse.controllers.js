@@ -168,7 +168,7 @@ async function updateResource(req, res) {
             updateData.cloudinaryResourceType = result.resource_type;
         }
 
-        const updatedResource = await Resource.findByIdAndUpdate(id, updateData, { new: true });
+        const updatedResource = await Resource.findByIdAndUpdate(id, updateData, { returnDocument: 'after' });
 
         return res.status(200).json({
             message: "Resource updated successfully",

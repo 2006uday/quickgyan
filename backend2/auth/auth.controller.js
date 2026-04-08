@@ -341,7 +341,7 @@ async function updateUserDetails(req, res) {
         if (finalEnrollmentNo) updateData.enrollment_no = finalEnrollmentNo;
 
         if (Object.keys(updateData).length > 0) {
-            const user = await User.findByIdAndUpdate(id, { $set: updateData }, { new: true });
+            const user = await User.findByIdAndUpdate(id, { $set: updateData }, { returnDocument: 'after' });
             return res.status(200).json({ message: "User details updated successfully", user });
         }
         return res.status(400).json({ error: "No update details provided" });
@@ -387,7 +387,7 @@ async function passwordChange(req, res) {
         }
 
         const hashPassword = await bcrypt.hash(newPassword, 10);
-        const user = await User.findByIdAndUpdate(id, { $set: { password: hashPassword } }, { new: true });
+        const user = await User.findByIdAndUpdate(id, { $set: { password: hashPassword } }, { returnDocument: 'after' });
         return res.status(200).json({ message: "Password changed successfully" });
 
     } catch (error) {

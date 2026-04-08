@@ -96,23 +96,38 @@ app.use((err, req, res, next) => {
  * Ensures the database is connected before the server begins listening.
  */
 let isConnected = false;
-const startServer = async () => {
+const connectToDatabase = async () => {
     if (!isConnected) {
         await connectDB();
         isConnected = true;
     }
-
-    if (process.env.NODE_ENV !== 'production' || !process.env.VERCEL) {
-        app.listen(PORT, () => {
-            console.log(`Server started on port ${PORT}`);
-        });
-    }
 };
 
 /**
- * Execute the server startup logic.
- * This final step initializes the database connection and the HTTP server.
+ * Middleware to ensure database connection is established before handling requests.
+ * This is crucial for serverless environments like Vercel.
  */
-startServer();
+app.use(async (req, res, next) => {
+    try {
+        await connectToDatabase();
+        next();
+    } catch (err) {
+        console.error("Database connection middleware error:", err);
+        res.status(500).json({ error: "Failed to connect to database" });
+    }
+});
+
+/**
+ * Start the server if running in a non-serverless environment.
+ */
+if (process.env.NODE_ENV !== 'production' || !process.env.VERCEL) {
+    connectToDatabase().then(() => {
+        app.listen(PORT, () => {
+            console.log(`Server started on port ${PORT}`);
+        });
+    }).catch(err => {
+        console.error("Initial database connection failed:", err);
+    });
+}
 
 export default app;

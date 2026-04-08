@@ -41,13 +41,13 @@ export default function CoursesPage() {
   }
 
   const getSemesterResourceCount = (semNum: number) => {
-    const semCourses = courses.filter(c => c.Semester === semNum)
+    const semCourses = courses.filter(c => String(c.Semester) === String(semNum))
     const codes = semCourses.map(c => c["Course Code"])
     return resources.filter(r => codes.includes(r.course)).length
   }
 
   const filteredCourses = courses.filter((course) => {
-    const semMatches = !selectedSemester || course.Semester === selectedSemester
+    const semMatches = !selectedSemester || String(course.Semester) === String(selectedSemester)
     const searchMatches =
       course["Course Name"].toLowerCase().includes(searchQuery.toLowerCase()) ||
       course["Course Code"].toLowerCase().includes(searchQuery.toLowerCase())
@@ -59,7 +59,7 @@ export default function CoursesPage() {
     return {
       id: semNum,
       name: `Semester ${semNum}`,
-      courses: filteredCourses.filter(c => c.Semester === semNum)
+      courses: filteredCourses.filter(c => String(c.Semester) === String(semNum))
     }
   }).filter(sem => sem.courses.length > 0)
 
@@ -117,7 +117,7 @@ export default function CoursesPage() {
             <div>
               <h3 className="font-semibold">Semester {sem}</h3>
               <p className="text-sm text-muted-foreground leading-tight">
-                {courses.filter(c => c.Semester === sem).length} courses • {getSemesterResourceCount(sem)} resources
+                {courses.filter(c => String(c.Semester) === String(sem)).length} courses • {getSemesterResourceCount(sem)} resources
               </p>
             </div>
           </button>

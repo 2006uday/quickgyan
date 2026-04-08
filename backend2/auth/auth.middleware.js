@@ -99,7 +99,7 @@ async function lastActiveMiddleware(req, res, next) {
     try {
         const userId = req.id || req.user?.id;
         if (userId) {
-            const user = await User.findByIdAndUpdate(userId, { lastActive: new Date() }, { new: true });
+            const user = await User.findByIdAndUpdate(userId, { lastActive: new Date() }, { returnDocument: 'after' });
 
             if (!user) {
                 res.clearCookie("accessToken");
