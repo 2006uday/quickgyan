@@ -125,14 +125,14 @@ app.use(async (req, res, next) => {
 /**
  * Start the server if running in a non-serverless environment.
  */
-if (process.env.NODE_ENV !== 'production' || !process.env.VERCEL) {
-    connectToDatabase().then(() => {
-        app.listen(PORT, () => {
-            console.log(`Server started on port ${PORT}`);
-        });
-    }).catch(err => {
-        console.error("Initial database connection failed:", err);
+// if (process.env.NODE_ENV !== 'production' || !process.env.VERCEL) {
+connectToDatabase().then(() => {
+    app.listen(PORT, () => {
+        console.log(`Server started on port ${PORT}`);
     });
-}
+}).catch(err => {
+    console.error("Initial database connection failed:", err);
+});
+// }
 
 export default app;
