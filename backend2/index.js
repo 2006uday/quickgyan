@@ -111,16 +111,16 @@ const connectToDatabase = async () => {
 /**
  * Middleware to ensure database connection is established before handling requests.
  * This is crucial for serverless environments like Vercel.
- */
-app.use(async (req, res, next) => {
-    try {
-        await connectToDatabase();
-        next();
-    } catch (err) {
-        console.error("Database connection middleware error:", err);
-        res.status(500).json({ error: "Failed to connect to database" });
-    }
-});
+//  */
+// app.use(async (req, res, next) => {
+//     try {
+//         await connectToDatabase();
+//         next();
+//     } catch (err) {
+//         console.error("Database connection middleware error:", err);
+//         res.status(500).json({ error: "Failed to connect to database" });
+//     }
+// });
 
 /**
  * Start the server if running in a non-serverless environment.
