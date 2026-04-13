@@ -64,6 +64,32 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 /**
+ * Database connection status tracker and server starter function.
+ * Ensures the database is connected before the server begins listening and processing API routes.
+ */
+let isConnected = false;
+const connectToDatabase = async () => {
+    if (!isConnected) {
+        await connectDB();
+        isConnected = true;
+    }
+};
+
+/**
+ * Middleware to ensure database connection is established before handling requests.
+ * This is crucial for serverless environments like Vercel where instances spin up and down.
+ */
+app.use(async (req, res, next) => {
+    try {
+        await connectToDatabase();
+        next();
+    } catch (err) {
+        console.error("Database connection middleware error:", err);
+        res.status(500).json({ error: "Failed to connect to database" });
+    }
+});
+
+/**
  * Register logical routes with their corresponding base paths.
  * Each module handles a specific set of features within the application.
  */
@@ -98,43 +124,19 @@ app.use((err, req, res, next) => {
     next();
 });
 
-/**
- * Database connection status tracker and server starter function.
- * Ensures the database is connected before the server begins listening.
- */
-let isConnected = false;
-const connectToDatabase = async () => {
-    if (!isConnected) {
-        await connectDB();
-        isConnected = true;
-    }
-};
 
-/**
- * Middleware to ensure database connection is established before handling requests.
- * This is crucial for serverless environments like Vercel.
-//  */
-// app.use(async (req, res, next) => {
-//     try {
-//         await connectToDatabase();
-//         next();
-//     } catch (err) {
-//         console.error("Database connection middleware error:", err);
-//         res.status(500).json({ error: "Failed to connect to database" });
-//     }
-// });
 
 /**
  * Start the server if running in a non-serverless environment.
  */
-// if (process.env.NODE_ENV !== 'production' || !process.env.VERCEL) {
-connectToDatabase().then(() => {
-    app.listen(PORT, () => {
-        console.log(`Server started on port ${PORT}`);
+if (process.env.NODE_ENV !== 'production' || !process.env.VERCEL) {
+    connectToDatabase().then(() => {
+        app.listen(PORT, () => {
+            console.log(`Server started on port ${PORT}`);
+        });
+    }).catch(err => {
+        console.error("Initial database connection failed:", err);
     });
-}).catch(err => {
-    console.error("Initial database connection failed:", err);
-});
-// }
+}
 
 export default app;
