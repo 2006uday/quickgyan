@@ -267,8 +267,8 @@ async function logoutPost(req, res) {
             path: "/",
         };
 
-        res.clearCookie("accessToken", cookieOptions);
-        res.clearCookie("refreshToken", cookieOptions);
+        res.clearCookie("accessToken");
+        res.clearCookie("refreshToken");
 
         // Also clear the refreshToken stored in DB for this user
         const token = req.cookies?.accessToken;
