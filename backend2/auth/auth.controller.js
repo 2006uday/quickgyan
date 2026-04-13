@@ -12,6 +12,15 @@ dotenv.config();
 const JWT_SECRET = process.env.JWT_SECRET;
 if (!JWT_SECRET) throw new Error("JWT_SECRET is not defined in .env");
 
+function getCookieOptions(overrides = {}) {
+    return {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+        path: "/",
+        ...overrides,
+    };
+}
 
 // user can be sign-up their account
 async function userPost(req, res) {
@@ -109,17 +118,11 @@ async function loginPost(req, res) {
 
         const refreshTokenStore = await User.updateOne({ _id: user._id }, { $set: { refreshToken: [refreshToken] } });
 
-        return res.cookie("accessToken", accessToken, {
-            httpOnly: true,
-            secure: true,
-            sameSite: "lax",
+        return res.cookie("accessToken", accessToken, getCookieOptions({
             maxAge: 1000 * 60 * 60 * 24,
-        }).cookie("refreshToken", refreshToken, {
-            httpOnly: true,
-            secure: true,
-            sameSite: "lax",
+        })).cookie("refreshToken", refreshToken, getCookieOptions({
             maxAge: 1000 * 60 * 60 * 24 * 7,
-        }).status(200).json({
+        })).status(200).json({
             message: "User logged in successfully",
             user: {
                 id: user._id,
@@ -260,15 +263,10 @@ async function logoutPost(req, res) {
     try {
         // Cookie options MUST match the options used when setting the cookie,
         // otherwise the browser will ignore the clear directive.
-        const cookieOptions = {
-            httpOnly: true,
-            secure: true,
-            sameSite: "lax",
-            path: "/",
-        };
+        const cookieOptions = getCookieOptions();
 
-        res.clearCookie("accessToken");
-        res.clearCookie("refreshToken");
+        res.clearCookie("accessToken", cookieOptions);
+        res.clearCookie("refreshToken", cookieOptions);
 
         // Also clear the refreshToken stored in DB for this user
         const token = req.cookies?.accessToken;
@@ -335,8 +333,9 @@ async function checkAuth(req, res) {
         }
         const data = await User.findById(decodedToken.id, { password: 0, refreshToken: 0 });
         if (!data) {
-            res.clearCookie("accessToken");
-            res.clearCookie("refreshToken");
+            const cookieOptions = getCookieOptions();
+            res.clearCookie("accessToken", cookieOptions);
+            res.clearCookie("refreshToken", cookieOptions);
             return res.status(401).json({ error: "User not found or unauthorized" });
         }
         return res.status(200).json({ message: "User is authorized", user: data });
