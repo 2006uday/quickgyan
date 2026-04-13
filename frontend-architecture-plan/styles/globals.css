@@ -38,6 +38,11 @@
   --sidebar-accent-foreground: oklch(0.205 0 0);
   --sidebar-border: oklch(0.922 0 0);
   --sidebar-ring: oklch(0.708 0 0);
+  /* Surface fallbacks for non-dark mode */
+  --surface-low: #f1f5f9;
+  --surface-default: #e2e8f0;
+  --surface-high: #cbd5e1;
+  --surface-highest: #94a3b8;
 }
 
 .dark {

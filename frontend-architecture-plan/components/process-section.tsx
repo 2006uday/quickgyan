@@ -25,7 +25,7 @@ const steps = [
 
 export function ProcessSection() {
   return (
-    <section className="relative px-4 py-24 lg:py-40 bg-surface-low/50">
+    <section id="process" className="relative px-4 py-24 lg:py-40 bg-surface-low/50">
       <div className="mx-auto max-w-7xl">
         <div className="mx-auto max-w-3xl text-center mb-24">
           <h2 className="font-display text-4xl font-extrabold tracking-tight text-foreground sm:text-5xl mb-6">

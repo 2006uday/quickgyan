@@ -19,7 +19,7 @@ const NAV_LINKS = [
   { label: "Features", href: "#features" },
   { label: "Process", href: "#process" },
   { label: "Library", href: "/courses" },
-  { label: "Community", href: "#contact" },
+  { label: "Community", href: "#community" },
 ]
 
 export function Navbar() {
