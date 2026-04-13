@@ -49,7 +49,8 @@ const PORT = process.env.PORT || 8060;
 app.use(cookieParser());
 app.use(
     cors({
-        origin: [process.env.FRONTEND_URL || "http://localhost:3000" || "http://localhost:3001"],
+        methods: ['GET', 'POST', 'PUT', 'DELETE'],
+        origin: [process.env.FRONTEND_URL],
         credentials: true,
     })
 );
