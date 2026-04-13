@@ -262,8 +262,8 @@ async function logoutPost(req, res) {
         // otherwise the browser will ignore the clear directive.
         const cookieOptions = {
             httpOnly: true,
-            secure: process.env.NODE_ENV === "production",
-            sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+            secure: true,
+            sameSite: "lax",
             path: "/",
         };
 
