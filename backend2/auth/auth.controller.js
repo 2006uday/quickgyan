@@ -290,9 +290,15 @@ async function deleteUser(req, res) {
 async function getUserDetails(req, res) {
     try {
         const details = req.cookies.accessToken;
+        if (!details) {
+            return res.status(401).json({ error: "Unauthorized" });
+        }
         const decodedToken = jwt.verify(details, JWT_SECRET);
         return res.status(200).json({ message: "User details fetched successfully", user: decodedToken });
     } catch (error) {
+        if (error.name === "JsonWebTokenError" || error.name === "TokenExpiredError") {
+            return res.status(401).json({ error: "Unauthorized" });
+        }
         console.log(error);
         return res.status(500).json({ error: "Internal server error" });
     }
@@ -301,6 +307,9 @@ async function getUserDetails(req, res) {
 async function checkAuth(req, res) {
     try {
         const token = req.cookies.accessToken;
+        if (!token) {
+            return res.status(401).json({ error: "Unauthorized" });
+        }
         const decodedToken = jwt.verify(token, JWT_SECRET);
         // console.log("decodedToken : ", decodedToken);
         if (!decodedToken) {
@@ -314,6 +323,9 @@ async function checkAuth(req, res) {
         }
         return res.status(200).json({ message: "User is authorized", user: data });
     } catch (error) {
+        if (error.name === "JsonWebTokenError" || error.name === "TokenExpiredError") {
+            return res.status(401).json({ error: "Unauthorized" });
+        }
         console.log(error);
         return res.status(500).json({ error: "Internal server error" });
     }

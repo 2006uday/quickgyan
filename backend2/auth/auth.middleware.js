@@ -20,6 +20,9 @@ async function checkAccessTokenIsAbleToAccessMiddleware(req, res, next) {
         req.user = decodedToken;
         next();
     } catch (error) {
+        if (error.name === "JsonWebTokenError" || error.name === "TokenExpiredError") {
+            return res.status(401).json({ error: "Unauthorized" });
+        }
         console.log(error);
         return res.status(500).json({ error: "Internal server error" });
     }
@@ -60,6 +63,9 @@ async function detailsMiddleware(req, res, next) {
         req.id = decodedToken.id;
         next();
     } catch (error) {
+        if (error.name === "JsonWebTokenError" || error.name === "TokenExpiredError") {
+            return res.status(401).json({ error: "Unauthorized" });
+        }
         console.log(error);
         return res.status(500).json({ error: "Internal server error" });
     }
@@ -75,6 +81,9 @@ async function logoutMiddleware(req, res, next) {
         req.user = decodedToken;
         next();
     } catch (error) {
+        if (error.name === "JsonWebTokenError" || error.name === "TokenExpiredError") {
+            return res.status(401).json({ error: "Unauthorized" });
+        }
         console.log(error);
         return res.status(500).json({ error: "Internal server error" });
     }
@@ -91,6 +100,9 @@ async function passwordChangeMiddleware(req, res, next) {
         req.id = decodedToken.id;
         next();
     } catch (error) {
+        if (error.name === "JsonWebTokenError" || error.name === "TokenExpiredError") {
+            return res.status(401).json({ error: "Unauthorized" });
+        }
         console.log(error);
         return res.status(500).json({ error: "Internal server error" });
     }
