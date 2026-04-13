@@ -43,7 +43,7 @@ export default async function RootLayout({
   console.log("Server Component User Data:", user);
 
   return (
-    <html lang="en">
+    <html lang="en" className="dark">
       <body className={`${inter.variable} ${manrope.variable} font-sans antialiased`}>
         <AuthProvider initialUser={user}>
           {children}
