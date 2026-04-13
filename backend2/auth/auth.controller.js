@@ -111,13 +111,13 @@ async function loginPost(req, res) {
 
         return res.cookie("accessToken", accessToken, {
             httpOnly: true,
-            secure: true,
-            sameSite: "none",
+            secure: process.env.NODE_ENV === "production",
+            sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
             maxAge: 1000 * 60 * 60 * 24,
         }).cookie("refreshToken", refreshToken, {
             httpOnly: true,
-            secure: true,
-            sameSite: "none",
+            secure: process.env.NODE_ENV === "production",
+            sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
             maxAge: 1000 * 60 * 60 * 24 * 7,
         }).status(200).json({
             message: "User logged in successfully",
@@ -262,8 +262,8 @@ async function logoutPost(req, res) {
         // otherwise the browser will ignore the clear directive.
         const cookieOptions = {
             httpOnly: true,
-            secure: true,
-            sameSite: "lax",
+            secure: process.env.NODE_ENV === "production",
+            sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
             path: "/",
         };
 
@@ -295,7 +295,7 @@ async function deleteUser(req, res) {
         const id = req.id;
         console.log(" id : ", id);
         await User.findByIdAndDelete({ _id: id });
-        const cookieOptions = { httpOnly: true, secure: true, sameSite: "none", path: "/" };
+        const cookieOptions = { httpOnly: true, secure: process.env.NODE_ENV === "production", sameSite: process.env.NODE_ENV === "production" ? "none" : "lax", path: "/" };
         res.clearCookie("accessToken", cookieOptions);
         res.clearCookie("refreshToken", cookieOptions);
         return res.status(200).json({ message: "User deleted successfully" });

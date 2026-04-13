@@ -46,6 +46,7 @@ const PORT = process.env.PORT || 8060;
  * Configure global middleware for the application.
  * This includes cookie parsing and cross-origin resource sharing (CORS).
  */
+app.set("trust proxy", 1);
 app.use(cookieParser());
 app.use(
     cors({
