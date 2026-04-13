@@ -1,120 +1,127 @@
+"use client"
 
 // hero-section component
 import Link from "next/link"
+import Image from "next/image"
 import { Button } from "@/components/ui/button"
-import { ArrowRight, Sparkles } from "lucide-react"
+import { ArrowRight, Sparkles, Play, LayoutDashboard } from "lucide-react"
+import { useAuth } from "@/lib/auth-context"
 
 export function HeroSection() {
+  const { user } = useAuth()
   return (
-    <section className="relative overflow-hidden px-4 py-20 lg:py-32">
+    <section className="relative overflow-hidden pt-32 pb-20 lg:pt-48 lg:pb-32 px-4">
       {/* Background decoration */}
       <div className="pointer-events-none absolute inset-0 -z-10">
-        <div className="absolute left-1/2 top-0 h-[600px] w-[600px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-primary/5 blur-3xl" />
-        <div className="absolute bottom-0 right-0 h-[400px] w-[400px] translate-x-1/4 translate-y-1/4 rounded-full bg-accent/10 blur-3xl" />
+        <div className="absolute left-1/2 top-0 h-[800px] w-[800px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-primary/10 blur-[120px]" />
+        <div className="absolute bottom-0 right-0 h-[600px] w-[600px] translate-x-1/4 translate-y-1/4 rounded-full bg-secondary/10 blur-[100px]" />
       </div>
 
       <div className="mx-auto max-w-7xl">
-        <div className="grid items-center gap-12 lg:grid-cols-2 lg:gap-16">
+        <div className="grid items-center gap-16 lg:grid-cols-2 lg:gap-24">
           {/* Text content */}
-          <div className="flex flex-col items-start">
-            <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/5 px-4 py-1.5">
+          <div className="flex flex-col items-start text-left lg:max-w-xl">
+            <div className="mb-8 inline-flex items-center gap-2 rounded-full border border-white/5 bg-white/5 px-4 py-2 backdrop-blur-md animate-in fade-in slide-in-from-bottom-4 duration-700">
               <Sparkles className="h-4 w-4 text-primary" />
-              <span className="text-sm font-medium text-primary">AI-Powered Learning</span>
+              <span className="text-xs font-semibold uppercase tracking-widest text-primary/80">AI-Powered Learning</span>
             </div>
 
-            <h1 className="text-balance text-4xl font-bold tracking-tight text-foreground sm:text-5xl lg:text-6xl">
-              Master Your{" "}
-              <span className="text-primary">BCA</span> with{" "}
-              <span className="text-primary">quickGyan</span>
+            <h1 className="font-display text-5xl font-extrabold tracking-tight text-foreground sm:text-6xl lg:text-7xl leading-[1.1] animate-in fade-in slide-in-from-bottom-6 duration-1000">
+              Your IGNOU BCA Journey, <span className="gradient-text">Reimagined.</span>
             </h1>
 
-            <p className="mt-6 max-w-xl text-pretty text-lg leading-relaxed text-muted-foreground">
-              The one-stop academic platform for IGNOU students. Get centralized notes, 
-              previous year papers, and 24/7 AI-powered doubt solving - all organized 
-              semester-wise for seamless learning.
+            <p className="mt-8 text-lg leading-relaxed text-muted-foreground/80 animate-in fade-in slide-in-from-bottom-8 duration-1000">
+              Centralized resources and 24/7 AI-powered support for modern learners. 
+              The definitive companion for BCA students searching for excellence and clarity.
             </p>
 
-            <div className="mt-8 flex flex-col gap-4 sm:flex-row">
-              <Button size="lg" asChild className="gap-2">
-                <Link href="/signup">
-                  Get Started Free
-                  <ArrowRight className="h-4 w-4" />
+            <div className="mt-10 flex flex-col gap-4 sm:flex-row animate-in fade-in slide-in-from-bottom-10 duration-1000">
+              {user ? (
+                <Button size="xl" asChild className="rounded-2xl bg-gradient-to-r from-primary to-secondary text-white border-0 shadow-2xl shadow-primary/20 group h-14 px-8">
+                  <Link href="/dashboard">
+                    <LayoutDashboard className="mr-2 h-5 w-5" />
+                    Go to Dashboard
+                  </Link>
+                </Button>
+              ) : (
+                <Button size="xl" asChild className="rounded-2xl bg-gradient-to-r from-primary to-secondary text-white border-0 shadow-2xl shadow-primary/20 group h-14 px-8">
+                  <Link href="/signup">
+                    Join the Future
+                    <ArrowRight className="ml-2 h-5 w-5 transition-transform group-hover:translate-x-1" />
+                  </Link>
+                </Button>
+              )}
+              <Button size="xl" variant="outline" asChild className="rounded-2xl border-white/10 bg-white/5 backdrop-blur-md hover:bg-white/10 h-14 px-8 gap-2">
+                <Link href="#features">
+                  <Play className="h-4 w-4 fill-foreground" />
+                  Watch Demo
                 </Link>
-              </Button>
-              <Button size="lg" variant="outline" asChild>
-                <Link href="#features">Explore Features</Link>
               </Button>
             </div>
 
             {/* Stats */}
-            <div className="mt-12 grid grid-cols-3 gap-8 border-t border-border pt-8">
+            <div className="mt-16 grid grid-cols-3 gap-8 border-t border-white/5 pt-10 animate-in fade-in duration-1000">
               <div>
-                <p className="text-2xl font-bold text-foreground">6+</p>
-                <p className="text-sm text-muted-foreground">Semesters</p>
+                <p className="font-display text-3xl font-bold text-foreground">6+</p>
+                <p className="mt-1 text-xs font-medium uppercase tracking-wider text-muted-foreground/60">Semesters</p>
               </div>
               <div>
-                <p className="text-2xl font-bold text-foreground">500+</p>
-                <p className="text-sm text-muted-foreground">Resources</p>
+                <p className="font-display text-3xl font-bold text-foreground">10k+</p>
+                <p className="mt-1 text-xs font-medium uppercase tracking-wider text-muted-foreground/60">Students</p>
               </div>
               <div>
-                <p className="text-2xl font-bold text-foreground">24/7</p>
-                <p className="text-sm text-muted-foreground">AI Support</p>
+                <p className="font-display text-3xl font-bold text-foreground">24/7</p>
+                <p className="mt-1 text-xs font-medium uppercase tracking-wider text-muted-foreground/60">AI Wisdom</p>
               </div>
             </div>
           </div>
 
           {/* Hero illustration */}
-          <div className="relative hidden lg:block">
-            <div className="relative rounded-2xl border border-border bg-card p-6 shadow-xl">
-              {/* Mock dashboard preview */}
-              <div className="space-y-4">
-                <div className="flex items-center gap-3">
-                  <div className="h-10 w-10 rounded-lg bg-primary/10" />
-                  <div>
-                    <div className="h-3 w-24 rounded bg-muted" />
-                    <div className="mt-1.5 h-2 w-16 rounded bg-muted/60" />
-                  </div>
-                </div>
-                <div className="grid grid-cols-2 gap-3">
-                  {[1, 2, 3, 4].map((i) => (
-                    <div key={i} className="rounded-lg border border-border bg-muted/30 p-4">
-                      <div className="mb-2 h-2 w-12 rounded bg-primary/20" />
-                      <div className="h-8 w-8 rounded bg-primary/10" />
-                      <div className="mt-3 h-2 w-full rounded bg-muted" />
+          <div className="relative animate-in fade-in zoom-in duration-1000 delay-300">
+            <div className="relative overflow-hidden rounded-[2.5rem] border border-white/10 bg-white/5 p-4 shadow-3xl backdrop-blur-sm">
+              <div className="relative overflow-hidden rounded-[2rem]">
+                <Image 
+                  src="/hero.png" 
+                  alt="QuickGyan AI Learning" 
+                  width={1200} 
+                  height={800} 
+                  className="object-cover transition-transform duration-700 hover:scale-105"
+                  priority
+                />
+              </div>
+              
+              {/* Floating UI Elements */}
+              <div className="absolute -left-10 top-1/2 -translate-y-1/2 hidden xl:block">
+                <div className="glass-dark p-4 rounded-2xl border border-white/10 shadow-2xl animate-bounce-slow">
+                  <div className="flex items-center gap-3">
+                    <div className="h-10 w-10 rounded-full bg-primary/20 flex items-center justify-center">
+                      <Sparkles className="h-5 w-5 text-primary" />
                     </div>
-                  ))}
-                </div>
-                <div className="rounded-lg border border-primary/20 bg-primary/5 p-4">
-                  <div className="flex items-center gap-2">
-                    <Sparkles className="h-4 w-4 text-primary" />
-                    <div className="h-2 w-20 rounded bg-primary/30" />
-                  </div>
-                  <div className="mt-2 space-y-1.5">
-                    <div className="h-2 w-full rounded bg-muted" />
-                    <div className="h-2 w-3/4 rounded bg-muted" />
+                    <div>
+                      <p className="text-xs font-bold text-white">AI Doubt Solver</p>
+                      <p className="text-[10px] text-muted-foreground">Ready to assist 24/7</p>
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
-            {/* Floating cards */}
-            <div className="absolute -left-8 -top-8 rounded-xl border border-border bg-card p-4 shadow-lg">
-              <div className="flex items-center gap-2">
-                <div className="h-8 w-8 rounded-full bg-accent/20" />
-                <div>
-                  <div className="h-2 w-16 rounded bg-muted" />
-                  <div className="mt-1 h-2 w-10 rounded bg-accent/30" />
+
+              <div className="absolute -right-10 bottom-20 hidden xl:block">
+                <div className="glass-dark p-4 rounded-2xl border border-white/10 shadow-2xl animate-float">
+                  <div className="flex items-center gap-3">
+                    <div className="h-10 w-10 rounded-xl bg-secondary/20 flex items-center justify-center">
+                      <Play className="h-4 w-4 text-secondary fill-secondary" />
+                    </div>
+                    <div>
+                      <p className="text-xs font-bold text-white">MCS-012 Lecture</p>
+                      <p className="text-[10px] text-muted-foreground">Now streaming</p>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
-            <div className="absolute -bottom-4 -right-4 rounded-xl border border-border bg-card p-4 shadow-lg">
-              <div className="flex items-center gap-2">
-                <div className="h-8 w-8 rounded bg-primary/20" />
-                <div>
-                  <div className="h-2 w-20 rounded bg-muted" />
-                  <div className="mt-1 h-2 w-12 rounded bg-primary/30" />
-                </div>
-              </div>
-            </div>
+            
+            {/* Background Glow */}
+            <div className="absolute -inset-10 -z-10 bg-gradient-to-br from-primary/20 to-secondary/20 blur-[100px] opacity-50" />
           </div>
         </div>
       </div>

@@ -258,10 +258,28 @@ async function allOtpDelete(req, res) {
 async function logoutPost(req, res) {
     console.log("logoutPost");
     try {
-        res.clearCookie("accessToken");
-        res.clearCookie("refreshToken");
-        console.log("accessToken : ", req.cookies.accessToken);
-        console.log("refreshToken : ", req.cookies.refreshToken);
+        // Cookie options MUST match the options used when setting the cookie,
+        // otherwise the browser will ignore the clear directive.
+        const cookieOptions = {
+            httpOnly: true,
+            secure: true,
+            sameSite: "none",
+            path: "/",
+        };
+
+        res.clearCookie("accessToken", cookieOptions);
+        res.clearCookie("refreshToken", cookieOptions);
+
+        // Also clear the refreshToken stored in DB for this user
+        const token = req.cookies?.accessToken;
+        if (token) {
+            try {
+                const decoded = jwt.verify(token, JWT_SECRET);
+                await User.updateOne({ _id: decoded.id }, { $set: { refreshToken: [] } });
+            } catch (_) {
+                // Token may already be expired — that's fine, still log out
+            }
+        }
 
         console.log("User logged out successfully");
         return res.status(200).json({ message: "User logged out successfully" });
@@ -274,12 +292,12 @@ async function logoutPost(req, res) {
 async function deleteUser(req, res) {
     console.log("deleteUser : ", req.params);
     try {
-
         const id = req.id;
         console.log(" id : ", id);
-        const user = await User.findByIdAndDelete({ _id: id });
-        res.clearCookie("accessToken");
-        res.clearCookie("refreshToken");
+        await User.findByIdAndDelete({ _id: id });
+        const cookieOptions = { httpOnly: true, secure: true, sameSite: "none", path: "/" };
+        res.clearCookie("accessToken", cookieOptions);
+        res.clearCookie("refreshToken", cookieOptions);
         return res.status(200).json({ message: "User deleted successfully" });
     } catch (error) {
         console.log(error);
