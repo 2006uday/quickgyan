@@ -7,7 +7,7 @@ const routes = express.Router();
 
 routes.post('/signup', loginMiddleware, authController.userPost);
 routes.post('/login', loginMiddleware, authController.loginPost);
-routes.get('/logout', logoutMiddleware, lastActiveMiddleware, authController.logoutPost);
+routes.get('/logout', authController.logoutPost);
 routes.delete('/delete-account', detailsMiddleware, lastActiveMiddleware, authController.deleteUser);
 routes.get('/details', detailsMiddleware, lastActiveMiddleware, authController.getUserDetails);
 routes.post('/otp', authController.otpPost);
