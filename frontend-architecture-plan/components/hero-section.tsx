@@ -2,126 +2,112 @@
 
 // hero-section component
 import Link from "next/link"
-import Image from "next/image"
 import { Button } from "@/components/ui/button"
-import { ArrowRight, Sparkles, Play, LayoutDashboard } from "lucide-react"
+import { ArrowRight, Sparkles, LayoutDashboard, BookOpen, FileText } from "lucide-react"
 import { useAuth } from "@/lib/auth-context"
+
+const stats = [
+  { value: "6+", label: "Semesters" },
+  { value: "500+", label: "Resources" },
+  { value: "24/7", label: "AI Support" },
+]
 
 export function HeroSection() {
   const { user } = useAuth()
-  return (
-    <section className="relative overflow-hidden pt-32 pb-20 lg:pt-48 lg:pb-32 px-4">
-      {/* Background decoration */}
-      <div className="pointer-events-none absolute inset-0 -z-10">
-        <div className="absolute left-1/2 top-0 h-[800px] w-[800px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-primary/10 blur-[120px]" />
-        <div className="absolute bottom-0 right-0 h-[600px] w-[600px] translate-x-1/4 translate-y-1/4 rounded-full bg-secondary/10 blur-[100px]" />
-      </div>
 
+  return (
+    <section className="relative overflow-hidden px-4 py-16 lg:py-24">
       <div className="mx-auto max-w-7xl">
-        <div className="grid items-center gap-16 lg:grid-cols-2 lg:gap-24">
+        <div className="grid items-center gap-12 lg:grid-cols-2 lg:gap-16">
           {/* Text content */}
-          <div className="flex flex-col items-start text-left lg:max-w-xl">
-            <div className="mb-8 inline-flex items-center gap-2 rounded-full border border-white/5 bg-white/5 px-4 py-2 backdrop-blur-md animate-in fade-in slide-in-from-bottom-4 duration-700">
-              <Sparkles className="h-4 w-4 text-primary" />
-              <span className="text-xs font-semibold uppercase tracking-widest text-primary/80">AI-Powered Learning</span>
+          <div className="flex flex-col items-start text-left">
+            <div className="mb-6 inline-flex items-center gap-2 rounded-full bg-primary/10 px-4 py-1.5">
+              <Sparkles className="h-3.5 w-3.5 text-primary" />
+              <span className="text-xs font-semibold text-primary">AI-Powered Learning</span>
             </div>
 
-            <h1 className="font-display text-5xl font-extrabold tracking-tight text-foreground sm:text-6xl lg:text-7xl leading-[1.1] animate-in fade-in slide-in-from-bottom-6 duration-1000">
-              Your IGNOU BCA Journey, <span className="gradient-text">Reimagined.</span>
+            <h1 className="font-display text-4xl font-extrabold tracking-tight text-foreground sm:text-5xl lg:text-6xl leading-tight">
+              Master Your BCA <br className="hidden sm:block" />
+              with <span className="text-primary">quickGyan</span>
             </h1>
 
-            <p className="mt-8 text-lg leading-relaxed text-muted-foreground/80 animate-in fade-in slide-in-from-bottom-8 duration-1000">
-              Centralized resources and 24/7 AI-powered support for modern learners. 
-              The definitive companion for BCA students searching for excellence and clarity.
+            <p className="mt-6 max-w-xl text-lg leading-relaxed text-muted-foreground">
+              The one-stop academic platform for IGNOU students. Get centralized notes, previous
+              year papers, and 24/7 AI-powered doubt solving — all organized semester-wise for
+              seamless learning.
             </p>
 
-            <div className="mt-10 flex flex-col gap-4 sm:flex-row animate-in fade-in slide-in-from-bottom-10 duration-1000">
+            <div className="mt-8 flex flex-col gap-3 sm:flex-row">
               {user ? (
-                <Button size="xl" asChild className="rounded-2xl bg-gradient-to-r from-primary to-secondary text-white border-0 shadow-2xl shadow-primary/20 group h-14 px-8">
+                <Button size="lg" asChild className="gap-2">
                   <Link href="/dashboard">
-                    <LayoutDashboard className="mr-2 h-5 w-5" />
+                    <LayoutDashboard className="h-4 w-4" />
                     Go to Dashboard
                   </Link>
                 </Button>
               ) : (
-                <Button size="xl" asChild className="rounded-2xl bg-gradient-to-r from-primary to-secondary text-white border-0 shadow-2xl shadow-primary/20 group h-14 px-8">
+                <Button size="lg" asChild className="gap-2">
                   <Link href="/signup">
-                    Join the Future
-                    <ArrowRight className="ml-2 h-5 w-5 transition-transform group-hover:translate-x-1" />
+                    Get Started Free
+                    <ArrowRight className="h-4 w-4" />
                   </Link>
                 </Button>
               )}
-              <Button size="xl" variant="outline" asChild className="rounded-2xl border-white/10 bg-white/5 backdrop-blur-md hover:bg-white/10 h-14 px-8 gap-2">
-                <Link href="#features">
-                  <Play className="h-4 w-4 fill-foreground" />
-                  Watch Demo
-                </Link>
+              <Button size="lg" variant="outline" asChild>
+                <Link href="#features">Explore Features</Link>
               </Button>
             </div>
 
             {/* Stats */}
-            <div className="mt-16 grid grid-cols-3 gap-8 border-t border-white/5 pt-10 animate-in fade-in duration-1000">
-              <div>
-                <p className="font-display text-3xl font-bold text-foreground">6+</p>
-                <p className="mt-1 text-xs font-medium uppercase tracking-wider text-muted-foreground/60">Semesters</p>
-              </div>
-              <div>
-                <p className="font-display text-3xl font-bold text-foreground">10k+</p>
-                <p className="mt-1 text-xs font-medium uppercase tracking-wider text-muted-foreground/60">Students</p>
-              </div>
-              <div>
-                <p className="font-display text-3xl font-bold text-foreground">24/7</p>
-                <p className="mt-1 text-xs font-medium uppercase tracking-wider text-muted-foreground/60">AI Wisdom</p>
-              </div>
+            <div className="mt-12 grid grid-cols-3 gap-8">
+              {stats.map((stat) => (
+                <div key={stat.label}>
+                  <p className="font-display text-3xl font-bold text-foreground">{stat.value}</p>
+                  <p className="mt-1 text-xs font-medium text-muted-foreground">{stat.label}</p>
+                </div>
+              ))}
             </div>
           </div>
 
           {/* Hero illustration */}
-          <div className="relative animate-in fade-in zoom-in duration-1000 delay-300">
-            <div className="relative overflow-hidden rounded-[2.5rem] border border-white/10 bg-white/5 p-4 shadow-3xl backdrop-blur-sm">
-              <div className="relative overflow-hidden rounded-[2rem]">
-                <Image 
-                  src="/hero.png" 
-                  alt="QuickGyan AI Learning" 
-                  width={1200} 
-                  height={800} 
-                  className="object-cover transition-transform duration-700 hover:scale-105"
-                  priority
-                />
-              </div>
-              
-              {/* Floating UI Elements */}
-              <div className="absolute -left-10 top-1/2 -translate-y-1/2 hidden xl:block">
-                <div className="glass-dark p-4 rounded-2xl border border-white/10 shadow-2xl animate-bounce-slow">
-                  <div className="flex items-center gap-3">
-                    <div className="h-10 w-10 rounded-full bg-primary/20 flex items-center justify-center">
-                      <Sparkles className="h-5 w-5 text-primary" />
+          <div className="relative hidden lg:block">
+            <div className="relative rounded-3xl border border-border bg-card p-6 shadow-xl">
+              <div className="grid grid-cols-2 gap-4">
+                {[
+                  { Icon: BookOpen, title: "C Programming Notes", tag: "MCS-011" },
+                  { Icon: FileText, title: "Solved Question Papers", tag: "2018-2023" },
+                  { Icon: BookOpen, title: "DBMS Study Material", tag: "MCS-023" },
+                  { Icon: FileText, title: "Solved Assignments", tag: "Sem 1-6" }
+                ].map((item, i) => (
+                  <div key={i} className="rounded-xl border border-border bg-muted/40 p-3 flex flex-col justify-between min-h-[85px]">
+                    <div className="flex justify-between items-start">
+                      <item.Icon className="h-4 w-4 text-primary" />
+                      <span className="text-[9px] font-bold text-primary bg-primary/10 px-1.5 py-0.5 rounded-full">
+                        {item.tag}
+                      </span>
                     </div>
-                    <div>
-                      <p className="text-xs font-bold text-white">AI Doubt Solver</p>
-                      <p className="text-[10px] text-muted-foreground">Ready to assist 24/7</p>
+                    <div className="mt-2">
+                      <h4 className="text-[11px] font-semibold text-foreground line-clamp-1">{item.title}</h4>
                     </div>
                   </div>
-                </div>
+                ))}
               </div>
-
-              <div className="absolute -right-10 bottom-20 hidden xl:block">
-                <div className="glass-dark p-4 rounded-2xl border border-white/10 shadow-2xl animate-float">
-                  <div className="flex items-center gap-3">
-                    <div className="h-10 w-10 rounded-xl bg-secondary/20 flex items-center justify-center">
-                      <Play className="h-4 w-4 text-secondary fill-secondary" />
-                    </div>
-                    <div>
-                      <p className="text-xs font-bold text-white">MCS-012 Lecture</p>
-                      <p className="text-[10px] text-muted-foreground">Now streaming</p>
-                    </div>
-                  </div>
+              <div className="mt-3.5 flex items-center gap-2.5 rounded-xl border border-border bg-muted/40 p-3">
+                <Sparkles className="h-4 w-4 text-primary shrink-0 animate-pulse" />
+                <div className="flex-1 text-[11px] text-muted-foreground line-clamp-1">
+                  Ask AI: <span className="text-foreground font-medium">Explain normalization...</span>
                 </div>
               </div>
             </div>
-            
-            {/* Background Glow */}
-            <div className="absolute -inset-10 -z-10 bg-gradient-to-br from-primary/20 to-secondary/20 blur-[100px] opacity-50" />
+
+            {/* Decorative accents */}
+            <div className="absolute -top-3 -left-3 flex items-center gap-1.5 rounded-full bg-card px-2.5 py-1 shadow-md border border-border">
+              <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
+              <span className="text-[9px] font-medium text-muted-foreground">AI Doubt solver active</span>
+            </div>
+            <div className="absolute -bottom-3 -right-3 flex h-8 w-8 items-center justify-center rounded-lg bg-primary shadow-lg hover:scale-105 transition-transform duration-200 cursor-pointer">
+              <Sparkles className="h-3.5 w-3.5 text-primary-foreground" />
+            </div>
           </div>
         </div>
       </div>

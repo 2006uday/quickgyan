@@ -2,3 +2,5 @@
 node_modules
 .vercel
 pnpm-lock.yaml
+pnpm-workspace.yaml
+.pnpm-store

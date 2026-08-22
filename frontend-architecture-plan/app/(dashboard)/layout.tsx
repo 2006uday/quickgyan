@@ -1,7 +1,7 @@
 "use client"
 
-import React from "react"
-
+import React, { useEffect } from "react"
+import { useRouter } from "next/navigation"
 import { useAuth } from "@/lib/auth-context"
 import { DashboardSidebar } from "@/components/dashboard-sidebar"
 import { DashboardHeader } from "@/components/dashboard-header"
@@ -13,19 +13,23 @@ export default function DashboardLayout({
   children: React.ReactNode
 }) {
   const { user, isLoading } = useAuth()
+  const router = useRouter()
 
   console.log("Client Side User Data (from DashboardLayout):", user);
 
-  if (isLoading) {
+  useEffect(() => {
+    if (!isLoading && !user) {
+      router.replace("/login")
+    }
+  }, [user, isLoading, router])
+
+  if (isLoading || !user) {
     return (
       <div className="flex min-h-screen items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
     )
   }
-
-  // Only render the dashboard if user is confirmed
-
 
   return (
     <div className="flex min-h-screen">

@@ -58,7 +58,7 @@ export default function SignupPage() {
 
     if (result.success) {
       router.push(
-        `/signup/verify-otp?email=${encodeURIComponent(formData.email)}&password=${encodeURIComponent(formData.password)}`
+        `/signup/verify-otp?email=${encodeURIComponent(formData.email)}`
       )
     } else {
       setError(result.error || "Signup failed")

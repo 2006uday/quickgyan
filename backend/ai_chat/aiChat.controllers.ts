@@ -32,13 +32,30 @@ export const askAI = async (req: any, res: any) => {
             .limit(11); // Last 10 + current user message
 
 
-        const contents = history.reverse().map(msg => ({
+        const rawContents = history.reverse().map(msg => ({
             role: msg.role === "user" ? "user" : "model",
-            parts: [{ text: msg.content }]
+            content: msg.content
         }));
 
+        // Ensure strictly alternating roles: user, model, user, model... ending with user
+        const contents: any[] = [];
+        for (const msg of rawContents) {
+            if (contents.length === 0) {
+                if (msg.role === "user") {
+                    contents.push({ role: "user", parts: [{ text: msg.content }] });
+                }
+            } else {
+                const lastMsg = contents[contents.length - 1];
+                if (lastMsg.role === msg.role) {
+                    lastMsg.parts[0].text += "\n" + msg.content;
+                } else {
+                    contents.push({ role: msg.role, parts: [{ text: msg.content }] });
+                }
+            }
+        }
+
         const response = await ai.models.generateContent({
-            model: "gemini-3-flash-preview",
+            model: "gemini-2.5-flash",
             contents: contents
         });
 

@@ -83,11 +83,9 @@ async function userPost(req, res) {
 }
 
 async function loginPost(req, res) {
-    console.log("loginPost : ", req.body);
     try {
-
         const { email, password } = req.body;
-        console.log();
+        console.log("loginPost - Attempting login for email:", email);
         if (!email || !password) {
             return res.status(400).json({ error: "All fields are required" });
         }
@@ -227,6 +225,16 @@ async function otpVerifyPost(req, res) {
 
         await Otp.deleteOne({ email });
 
+        const payload = {
+            id: user._id,
+            role: user.role,
+        };
+
+        const accessToken = jwt.sign(payload, JWT_SECRET, { expiresIn: "1d" });
+        const refreshToken = jwt.sign(payload, JWT_SECRET, { expiresIn: "7d" });
+
+        await User.updateOne({ _id: user._id }, { $set: { refreshToken: [refreshToken] } });
+
         // Build response user object
         const userData = {
             id: user._id,
@@ -234,9 +242,14 @@ async function otpVerifyPost(req, res) {
             email: user.email,
             enrollment_no: user.enrollment_no,
             lastActive: user.lastActive,
+            role: user.role,
         };
 
-        return res.status(200).json({
+        return res.cookie("accessToken", accessToken, getCookieOptions({
+            maxAge: 1000 * 60 * 60 * 24,
+        })).cookie("refreshToken", refreshToken, getCookieOptions({
+            maxAge: 1000 * 60 * 60 * 24 * 7,
+        })).status(200).json({
             message: "OTP verified and account created successfully",
             user: userData
         });
@@ -322,13 +335,17 @@ async function getUserDetails(req, res) {
 
 async function checkAuth(req, res) {
     try {
-        const token = req.cookies.accessToken;
+        const cookieNames = req.cookies ? Object.keys(req.cookies) : [];
+        console.log("checkAuth - Incoming cookie keys:", cookieNames);
+        const token = req.cookies?.accessToken;
         if (!token) {
+            console.log("checkAuth - No accessToken cookie found.");
             return res.status(401).json({ error: "Unauthorized" });
         }
         const decodedToken = jwt.verify(token, JWT_SECRET);
-        // console.log("decodedToken : ", decodedToken);
+        console.log("checkAuth - Decoded token user ID:", decodedToken.id);
         if (!decodedToken) {
+            console.log("checkAuth - Decoded token is empty.");
             return res.status(401).json({ error: "Unauthorized" });
         }
         const data = await User.findById(decodedToken.id, { password: 0, refreshToken: 0 });
@@ -350,8 +367,6 @@ async function checkAuth(req, res) {
 
 async function updateUserDetails(req, res) {
     try {
-        console.log("req.body : ", req.body);
-
         const id = req.id;
         if (!id) {
             return res.status(401).json({ error: "Unauthorized: User ID not found in token" });

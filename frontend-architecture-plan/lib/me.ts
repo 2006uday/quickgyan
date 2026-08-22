@@ -13,9 +13,10 @@ export const me = async () => {
     }
 
     try {
-        const res = await fetch("https://quickgyan-backend.vercel.app/auth/me", {
+        const res = await fetch("http://localhost:8060/auth/me", {
             method: "GET",
             headers: headers,
+            cache: "no-store",
         });
 
         if (!res.ok) {

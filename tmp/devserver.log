@@ -1,0 +1,14 @@
+
+> my-v0-project@0.1.0 dev
+> next dev
+
+ ⚠ Port 3000 is in use by process 28652, using available port 3002 instead.
+   ▲ Next.js 16.0.10 (Turbopack)
+   - Local:         http://localhost:3002
+   - Network:       http://192.168.1.27:3002
+
+ ✓ Starting...
+[baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
+ ⨯ Unable to acquire lock at C:\Users\Dell\Documents\GitHub\quickgyan\frontend-architecture-plan\.next\dev\lock, is another instance of next dev running?
+   Suggestion: If you intended to restart next dev, terminate the other process, and then try again.
+[?25h

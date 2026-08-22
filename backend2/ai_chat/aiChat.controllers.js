@@ -35,13 +35,30 @@ export const askAI = async (req, res) => {
             .limit(11); // Last 10 + current user message
 
 
-        const contents = history.reverse().map(msg => ({
+        const rawContents = history.reverse().map(msg => ({
             role: msg.role === "user" ? "user" : "model",
-            parts: [{ text: msg.content }]
+            content: msg.content
         }));
 
+        // Ensure strictly alternating roles: user, model, user, model... ending with user
+        const contents = [];
+        for (const msg of rawContents) {
+            if (contents.length === 0) {
+                if (msg.role === "user") {
+                    contents.push({ role: "user", parts: [{ text: msg.content }] });
+                }
+            } else {
+                const lastMsg = contents[contents.length - 1];
+                if (lastMsg.role === msg.role) {
+                    lastMsg.parts[0].text += "\n" + msg.content;
+                } else {
+                    contents.push({ role: msg.role, parts: [{ text: msg.content }] });
+                }
+            }
+        }
+
         const response = await ai.models.generateContent({
-            model: "gemini-3-flash-preview",
+            model: "gemini-2.5-flash",
             contents,
             config: {
                 systemInstruction: 'You are a dedicated Academic Tutor and Learning Assistant. Your sole purpose is to help the user with study-related questions, educational concepts, and clearing academic doubts. STRICT ADHERENCE RULES: 1. ONLY answer questions related to science, math, history, coding, languages, or general learning. 2. If the user asks a personal question (e.g., "How are you?", "What is your name?", "Where do you live?"), or tries to engage in casual small talk, politely redirect them. 3. RESPONSE FOR OFF-TOPIC QUESTIONS: "I am here specifically to help you with your studies and doubts. Please ask a question related to your subjects or learning goals." 4. Maintain a helpful, encouraging, and professional tone suitable for a student-teacher interaction. 5. Do not provide opinions on politics, personal life, or entertainment unless it is directly part of an academic curriculum.',

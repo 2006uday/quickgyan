@@ -12,14 +12,19 @@ if (!JWT_SECRET) throw new Error("JWT_SECRET is not defined in .env");
 
 async function checkAccessTokenIsAbleToAccessMiddleware(req, res, next) {
     try {
-        const token = req.cookies.accessToken;
+        const cookieNames = req.cookies ? Object.keys(req.cookies) : [];
+        console.log("checkAccessTokenIsAbleToAccessMiddleware - Incoming cookie keys:", cookieNames);
+        const token = req.cookies?.accessToken;
         if (!token) {
+            console.log("checkAccessTokenIsAbleToAccessMiddleware - No accessToken cookie found.");
             return res.status(401).json({ error: "Unauthorized" });
         }
         const decodedToken = jwt.verify(token, JWT_SECRET);
+        console.log("checkAccessTokenIsAbleToAccessMiddleware - Token verified successfully for user ID:", decodedToken.id);
         req.user = decodedToken;
         next();
     } catch (error) {
+        console.log("checkAccessTokenIsAbleToAccessMiddleware - Verification failed:", error.message);
         if (error.name === "JsonWebTokenError" || error.name === "TokenExpiredError") {
             return res.status(401).json({ error: "Unauthorized" });
         }
@@ -30,23 +35,9 @@ async function checkAccessTokenIsAbleToAccessMiddleware(req, res, next) {
 
 async function loginMiddleware(req, res, next) {
     try {
-        console.log("req.cookies.accessToken : ", req.cookies.accessToken);
-
-        const token = req.cookies.accessToken;
-
-        // If user already has a valid token, redirect them — no need to log in again
-        if (token) {
-            const decodedToken = jwt.verify(token, JWT_SECRET);
-            req.user = decodedToken;
-            console.log("User already logged in, redirecting. decodedToken:", decodedToken);
-            return res.redirect("/");
-        }
-
-        // No token — let them proceed to the login handler
+        console.log("loginMiddleware - req.cookies.accessToken present : ", !!req.cookies?.accessToken);
         next();
     } catch (error) {
-        // Token was invalid/expired — clear it and let them log in fresh
-        console.log("Invalid token in loginMiddleware, proceeding to login:", error.message);
         next();
     }
 }
@@ -59,7 +50,7 @@ async function detailsMiddleware(req, res, next) {
             return res.status(401).json({ message: "Unauthorized" });
         }
         const decodedToken = jwt.verify(token, JWT_SECRET);
-        console.log("decodedToken : ", decodedToken);
+        console.log("decodedToken user ID : ", decodedToken.id);
         req.id = decodedToken.id;
         next();
     } catch (error) {
@@ -96,7 +87,7 @@ async function passwordChangeMiddleware(req, res, next) {
             return res.status(401).json({ error: "Unauthorized" });
         }
         const decodedToken = jwt.verify(token, JWT_SECRET);
-        console.log("decodedToken : ", decodedToken);
+        console.log("decodedToken user ID : ", decodedToken.id);
         req.id = decodedToken.id;
         next();
     } catch (error) {

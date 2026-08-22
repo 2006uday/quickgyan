@@ -72,6 +72,7 @@ type OtpType = {
     otp: number;
     expiresAt: Date;
     status: string;
+    userData?: any;
 }
 
 const OtpSchema = new mongoose.Schema<OtpType>(
@@ -89,12 +90,17 @@ const OtpSchema = new mongoose.Schema<OtpType>(
         },
         expiresAt: {
             type: Date,
-            default: new Date(Date.now() + 2 * 60 * 1000)
+            default: () => new Date(Date.now() + 2 * 60 * 1000),
+            expires: 0
         },
         status: {
             type: String,
             enum: ["pending", "verified", "expired"],
             default: "pending"
+        },
+        userData: {
+            type: Object,
+            default: null
         }
     },
     {

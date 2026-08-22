@@ -10,9 +10,8 @@ const JWT_SECRET = process.env.JWT_SECRET;
 if (!JWT_SECRET) throw new Error("JWT_SECRET is not defined in .env");
 
 async function userPost(req: any, res: any) {
-    console.log("userPost : ", req.body);
-
     try {
+        console.log("userPost - Requesting registration for email:", req.body?.email);
         const { username, enrollment_no, email, password } = req.body;
 
         const hashPassword = await bcrypt.hash(password, 10);
@@ -59,10 +58,9 @@ async function userPost(req: any, res: any) {
 }
 
 async function loginPost(req: any, res: any) {
-    console.log("loginPost : ", req.body);
     try {
-
         const { email, password } = req.body;
+        console.log("loginPost - Attempting login for email:", email);
 
         if (!email || !password) {
             return res.status(400).json({ error: "All fields are required" });
@@ -172,8 +170,7 @@ async function otpVerifyPost(req: any, res: any) {
     try {
         const { email, otp } = req.body;
 
-        const user = await User.find({ email });
-        console.log(user);
+        const user = await User.findOne({ email });
 
         if (!user) {
             return res.status(400).json({ error: "User not found" });
@@ -194,7 +191,39 @@ async function otpVerifyPost(req: any, res: any) {
         console.log("OTP verified successfully");
         await Otp.deleteOne({ email });
 
-        return res.status(200).json({ message: "OTP verified successfully" });
+        const payload = {
+            id: user._id,
+            role: user.role,
+        };
+
+        const accessToken = jwt.sign(payload, JWT_SECRET!, { expiresIn: "1d" });
+        const refreshToken = jwt.sign(payload, JWT_SECRET!, { expiresIn: "7d" });
+
+        await User.updateOne({ _id: user._id }, { $push: { refreshToken: refreshToken } });
+
+        const userData = {
+            id: user._id,
+            username: user.username,
+            email: user.email,
+            enrollment_no: user.enrollment_no,
+            lastActive: user.lastActive,
+            role: user.role,
+        };
+
+        return res.cookie("accessToken", accessToken, {
+            httpOnly: true,
+            secure: true,
+            sameSite: "lax",
+            maxAge: 1000 * 60 * 60 * 24,
+        }).cookie("refreshToken", refreshToken, {
+            httpOnly: true,
+            secure: true,
+            sameSite: "lax",
+            maxAge: 1000 * 60 * 60 * 24 * 7,
+        }).status(200).json({
+            message: "OTP verified successfully",
+            user: userData
+        });
     } catch (error: any) {
         console.log(error);
         return res.status(500).json({ error: "Internal server error" });
@@ -216,8 +245,8 @@ async function logoutPost(req: any, res: any) {
     try {
         res.clearCookie("accessToken");
         res.clearCookie("refreshToken");
-        console.log("accessToken : ", req.cookies.accessToken);
-        console.log("refreshToken : ", req.cookies.refreshToken);
+        console.log("accessToken present : ", !!req.cookies?.accessToken);
+        console.log("refreshToken present : ", !!req.cookies?.refreshToken);
 
         console.log("User logged out successfully");
         return res.status(200).json({ message: "User logged out successfully" });
@@ -277,8 +306,6 @@ async function checkAuth(req: any, res: any) {
 
 async function updateUserDetails(req: any, res: any) {
     try {
-        console.log("req.body : ", req.body);
-
         const id = req.id;
         if (!id) {
             return res.status(401).json({ error: "Unauthorized: User ID not found in token" });

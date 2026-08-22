@@ -25,10 +25,10 @@ const testimonials = [
 
 export function TestimonialsSection() {
   return (
-    <section id="community" className="relative px-4 py-24 lg:py-40 overflow-hidden">
+    <section id="community" className="relative px-4 pt-16 pb-12 lg:pt-24 lg:pb-16 overflow-hidden">
       <div className="mx-auto max-w-7xl">
-        <div className="mx-auto max-w-3xl text-center mb-24">
-          <h2 className="font-display text-4xl font-extrabold tracking-tight text-foreground sm:text-5xl mb-6">
+        <div className="mx-auto max-w-3xl text-center mb-12">
+          <h2 className="font-display text-4xl font-extrabold tracking-tight text-foreground sm:text-5xl mb-4">
             Voices from the <span className="gradient-text">Community.</span>
           </h2>
           <p className="text-lg text-muted-foreground/70 leading-relaxed">
@@ -40,19 +40,19 @@ export function TestimonialsSection() {
           {testimonials.map((testimonial, index) => (
             <div 
               key={testimonial.name}
-              className="relative p-8 rounded-[2rem] bg-surface-low border border-white/5 shadow-2xl transition-all duration-300 hover:bg-surface-default hover:-translate-y-2 group"
+              className="relative p-6 rounded-[2rem] bg-surface-low border border-white/5 shadow-2xl transition-all duration-300 hover:bg-surface-default hover:-translate-y-2 group"
             >
               <div className="absolute top-6 right-8 text-primary/10 group-hover:text-primary/20 transition-colors">
                 <Quote className="h-12 w-12" />
               </div>
               
-              <div className="flex gap-1 mb-6">
+              <div className="flex gap-1 mb-4">
                 {[1, 2, 3, 4, 5].map((s) => (
                   <Star key={s} className="h-4 w-4 fill-primary text-primary" />
                 ))}
               </div>
 
-              <p className="text-muted-foreground/80 leading-relaxed mb-8 italic">
+              <p className="text-muted-foreground/80 leading-relaxed mb-5 italic">
                 "{testimonial.content}"
               </p>
 

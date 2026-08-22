@@ -25,10 +25,10 @@ const steps = [
 
 export function ProcessSection() {
   return (
-    <section id="process" className="relative px-4 py-24 lg:py-40 bg-surface-low/50">
+    <section id="process" className="relative px-4 py-16 lg:py-24 bg-surface-low/50">
       <div className="mx-auto max-w-7xl">
-        <div className="mx-auto max-w-3xl text-center mb-24">
-          <h2 className="font-display text-4xl font-extrabold tracking-tight text-foreground sm:text-5xl mb-6">
+        <div className="mx-auto max-w-3xl text-center mb-12">
+          <h2 className="font-display text-4xl font-extrabold tracking-tight text-foreground sm:text-5xl mb-4">
             Our <span className="gradient-text">Process.</span>
           </h2>
           <p className="text-lg text-muted-foreground/70 leading-relaxed">
@@ -42,7 +42,7 @@ export function ProcessSection() {
           
           {steps.map((step, index) => (
             <div key={step.title} className="relative z-10 flex flex-col items-center text-center group">
-              <div className="mb-8 relative">
+              <div className="mb-6 relative">
                 <div className={`flex h-20 w-20 items-center justify-center rounded-2xl bg-surface-default border border-white/5 shadow-2xl transition-all duration-300 group-hover:scale-110 group-hover:border-primary/50`}>
                   <step.icon className="h-10 w-10 text-primary" />
                 </div>
@@ -52,7 +52,7 @@ export function ProcessSection() {
                 </div>
               </div>
               
-              <h3 className="text-2xl font-display font-bold text-foreground mb-4">{step.title}</h3>
+              <h3 className="text-2xl font-display font-bold text-foreground mb-2">{step.title}</h3>
               <p className="text-muted-foreground/70 leading-relaxed max-w-[280px]">{step.description}</p>
             </div>
           ))}

@@ -155,24 +155,26 @@ export default function DashboardPage() {
       </Card>
 
       {/* Quick Access Cards */}
-      <div className="grid gap-4 sm:grid-cols-3">
-        {quickAccessCards.map((card) => (
-          <Link key={card.title} href={card.href}>
-            <Card className="transition-all hover:border-primary/30 hover:shadow-md">
-              <CardContent className="flex items-center gap-4 p-4">
-                <div className={`rounded-lg p-3 ${card.color}`}>
-                  <card.icon className="h-5 w-5" />
-                </div>
-                <div className="flex-1">
-                  <h3 className="font-medium">{card.title}</h3>
-                  <p className="text-sm text-muted-foreground">{card.description}</p>
-                </div>
-                <ArrowRight className="h-4 w-4 text-muted-foreground" />
-              </CardContent>
-            </Card>
-          </Link>
-        ))}
-      </div>
+      {user?.role !== 'admin' && (
+        <div className="grid gap-4 sm:grid-cols-3">
+          {quickAccessCards.map((card) => (
+            <Link key={card.title} href={card.href}>
+              <Card className="transition-all hover:border-primary/30 hover:shadow-md">
+                <CardContent className="flex items-center gap-4 p-4">
+                  <div className={`rounded-lg p-3 ${card.color}`}>
+                    <card.icon className="h-5 w-5" />
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="font-medium">{card.title}</h3>
+                    <p className="text-sm text-muted-foreground">{card.description}</p>
+                  </div>
+                  <ArrowRight className="h-4 w-4 text-muted-foreground" />
+                </CardContent>
+              </Card>
+            </Link>
+          ))}
+        </div>
+      )}
 
       <div className="grid gap-6 lg:grid-cols-2">
         {/* Recent Resources */}

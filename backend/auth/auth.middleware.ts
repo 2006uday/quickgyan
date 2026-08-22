@@ -24,23 +24,9 @@ async function checkAccessTokenIsAbleToAccessMiddleware(req: any, res: any, next
 
 async function loginMiddleware(req: any, res: any, next: any) {
     try {
-        console.log("req.cookies.accessToken : ", req.cookies.accessToken);
-
-        const token = req.cookies.accessToken;
-
-        // If user already has a valid token, redirect them — no need to log in again
-        if (token) {
-            const decodedToken = jwt.verify(token, JWT_SECRET!) as any;
-            req.user = decodedToken;
-            console.log("User already logged in, redirecting. decodedToken:", decodedToken);
-            return res.redirect("/");
-        }
-
-        // No token — let them proceed to the login handler
+        console.log("loginMiddleware - req.cookies.accessToken present : ", !!req.cookies?.accessToken);
         next();
-    } catch (error: any) {
-        // Token was invalid/expired — clear it and let them log in fresh
-        console.log("Invalid token in loginMiddleware, proceeding to login:", error.message);
+    } catch (error) {
         next();
     }
 }
@@ -53,7 +39,7 @@ async function detailsMiddleware(req: any, res: any, next: any) {
             return res.status(401).json({ message: "Unauthorized" });
         }
         const decodedToken = jwt.verify(token, JWT_SECRET!) as any;
-        console.log("decodedToken : ", decodedToken);
+        console.log("decodedToken user ID : ", decodedToken.id);
         req.id = decodedToken.id;
         next();
     } catch (error: any) {
@@ -84,7 +70,7 @@ async function passwordChangeMiddleware(req: any, res: any, next: any) {
             return res.status(401).json({ error: "Unauthorized" });
         }
         const decodedToken = jwt.verify(token, JWT_SECRET!) as any;
-        console.log("decodedToken : ", decodedToken);
+        console.log("decodedToken user ID : ", decodedToken.id);
         req.id = decodedToken.id;
         next();
     } catch (error: any) {
