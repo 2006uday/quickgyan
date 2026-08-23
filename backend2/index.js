@@ -51,7 +51,7 @@ app.use(cookieParser());
 app.use(
     cors({
         methods: ['GET', 'POST', 'PUT', 'DELETE'],
-        origin: [process.env.FRONTEND_URL, "http://localhost:5173", "http://localhost:3000", "http://localhost:8060", "https://quick-gyan.vercel.app"],
+        origin: [process.env.FRONTEND_URL, "http://localhost:5173", "http://localhost:3000", "http://localhost:8060", "https://quickgyan-ecl3.vercel.app"],
         credentials: true,
     })
 );
@@ -130,13 +130,13 @@ app.use((err, req, res, next) => {
  * Start the server if running in a non-serverless environment.
  */
 
-    connectToDatabase().then(() => {
-        app.listen(PORT, () => {
-            console.log(`Server started on port ${PORT}`);
-        });
-    }).catch(err => {
-        console.error("Initial database connection failed:", err);
+connectToDatabase().then(() => {
+    app.listen(PORT, () => {
+        console.log(`Server started on port ${PORT}`);
     });
+}).catch(err => {
+    console.error("Initial database connection failed:", err);
+});
 
 
 export default app;
