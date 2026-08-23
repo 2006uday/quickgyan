@@ -13,7 +13,8 @@ export const me = async () => {
     }
 
     try {
-        const res = await fetch("http://localhost:8060/auth/me", {
+        const backendUrl = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8060').replace(/\/$/, '');
+        const res = await fetch(`${backendUrl}/auth/me`, {
             method: "GET",
             headers: headers,
             cache: "no-store",

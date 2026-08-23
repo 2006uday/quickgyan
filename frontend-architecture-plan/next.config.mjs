@@ -7,10 +7,11 @@ const nextConfig = {
     unoptimized: true,
   },
   async rewrites() {
+    const backendUrl = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8060').replace(/\/$/, '');
     return [
       {
         source: '/api/:path*',
-        destination: 'http://localhost:8060/:path*',
+        destination: `${backendUrl}/:path*`,
       },
     ]
   },
