@@ -46,6 +46,11 @@ async function userPost(req, res) {
             return res.status(400).json({ error: "User already exists" });
         }
 
+        const alreadyUsername = await User.findOne({ username });
+        if (alreadyUsername) {
+            return res.status(400).json({ error: "Username already exists" });
+        }
+
         const hashPassword = await bcrypt.hash(password, 10);
         const otp = Math.floor(100000 + Math.random() * 900000);
 
@@ -254,7 +259,15 @@ async function otpVerifyPost(req, res) {
             user: userData
         });
     } catch (error) {
-        console.log(error);
+        console.error("Error during OTP verification:", error);
+        if (error.code === 11000) {
+            const key = Object.keys(error.keyPattern || {})[0];
+            return res.status(400).json({ error: `${key.charAt(0).toUpperCase() + key.slice(1)} already registered` });
+        }
+        if (error.name === "ValidationError") {
+            const firstError = Object.values(error.errors)[0]?.message;
+            return res.status(400).json({ error: firstError || "Validation error" });
+        }
         return res.status(500).json({ error: "Internal server error during verification" });
     }
 }
