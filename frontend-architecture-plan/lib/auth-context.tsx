@@ -71,8 +71,8 @@ interface AuthContextType {
 // Base URL — change once, works everywhere
 // ---------------------------------------------------------------------------
 
-// const API_BASE_URL = "https://quickgyan-backend.vercel.app"
-const API_BASE_URL = "/api"
+const API_BASE_URL = "https://quickgyan-ecl3.vercel.app"
+// const API_BASE_URL = "/api"
 const API_BASE = `${API_BASE_URL}/auth`
 const API_BASE_AI = `${API_BASE_URL}/ai-chat`
 const API_BASE_COURSES = `${API_BASE_URL}/courses`
@@ -116,8 +116,17 @@ export function AuthProvider({ children, initialUser }: { children: ReactNode, i
   const checkUser = async () => {
     try {
       console.log("checkUser - Sending request to /me");
-      const res = await axios.get(`${API_BASE}/me`, axiosConfig);
-      console.log("checkUser - Response received:", res.data);
+      const res = await axios.get(`${API_BASE}/me`, {
+        ...axiosConfig,
+        validateStatus: (status) => (status >= 200 && status < 300) || status === 401,
+      });
+      console.log("checkUser - Response received:", res.status, res.data);
+
+      if (res.status === 401) {
+        setUser(null);
+        return;
+      }
+
       if (res.data?.user) {
         const u = res.data.user;
         const userData: User = {
