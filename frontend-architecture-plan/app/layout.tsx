@@ -32,7 +32,15 @@ export const metadata: Metadata = {
     'IGNOU study helper',
     'IGNOU academic platform',
     'IGNOU learning assistant',
-    'IGNOU online support'
+    'IGNOU online support',
+    'ignou book',
+    'ignou books',
+    'ignu book',
+    'ignu books',
+    'ignou study material',
+    'ignu study material',
+    'ignou bca',
+    'ignu bca'
   ],
   generator: 'quickGyan',
   applicationName: 'quickGyan',
