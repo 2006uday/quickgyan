@@ -11,7 +11,7 @@ const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
 const manrope = Manrope({ subsets: ["latin"], variable: "--font-manrope" });
 
 export const metadata: Metadata = {
-  metadataBase: new URL('https://quickgyan.vercel.app'),
+  metadataBase: new URL('https://quick-gyan.vercel.app'),
   title: {
     default: 'quickGyan - Your One-Stop Platform for IGNOU BCA Students',
     template: '%s | quickGyan',
@@ -67,7 +67,7 @@ export const metadata: Metadata = {
   openGraph: {
     type: 'website',
     locale: 'en_US',
-    url: 'https://quickgyan.vercel.app',
+    url: 'https://quick-gyan.vercel.app',
     title: 'quickGyan - Your One-Stop Platform for IGNOU BCA Students',
     description: 'The centralized academic platform for IGNOU BCA students. Access semester-wise books, sample papers, solved assignments, notes, and AI-powered learning assistance.',
     siteName: 'quickGyan',
@@ -119,29 +119,29 @@ export default async function RootLayout({
     '@graph': [
       {
         '@type': 'WebSite',
-        '@id': 'https://quickgyan.vercel.app/#website',
-        'url': 'https://quickgyan.vercel.app',
+        '@id': 'https://quick-gyan.vercel.app/#website',
+        'url': 'https://quick-gyan.vercel.app',
         'name': 'quickGyan',
         'description': 'The centralized academic platform for IGNOU BCA students. Access semester-wise books, sample papers, solved assignments, notes, and AI-powered learning assistance.',
         'publisher': {
-          '@id': 'https://quickgyan.vercel.app/#organization'
+          '@id': 'https://quick-gyan.vercel.app/#organization'
         },
         'inLanguage': 'en-US'
       },
       {
         '@type': 'Organization',
-        '@id': 'https://quickgyan.vercel.app/#organization',
+        '@id': 'https://quick-gyan.vercel.app/#organization',
         'name': 'quickGyan',
-        'url': 'https://quickgyan.vercel.app',
+        'url': 'https://quick-gyan.vercel.app',
         'logo': {
           '@type': 'ImageObject',
-          '@id': 'https://quickgyan.vercel.app/#logo',
-          'url': 'https://quickgyan.vercel.app/icon.svg',
-          'contentUrl': 'https://quickgyan.vercel.app/icon.svg',
+          '@id': 'https://quick-gyan.vercel.app/#logo',
+          'url': 'https://quick-gyan.vercel.app/icon.svg',
+          'contentUrl': 'https://quick-gyan.vercel.app/icon.svg',
           'caption': 'quickGyan'
         },
         'image': {
-          '@id': 'https://quickgyan.vercel.app/#logo'
+          '@id': 'https://quick-gyan.vercel.app/#logo'
         },
         'sameAs': [
           'https://github.com/2006uday/quickgyan'
@@ -149,14 +149,14 @@ export default async function RootLayout({
       },
       {
         '@type': 'WebApplication',
-        '@id': 'https://quickgyan.vercel.app/#webapplication',
+        '@id': 'https://quick-gyan.vercel.app/#webapplication',
         'name': 'quickGyan',
-        'url': 'https://quickgyan.vercel.app',
+        'url': 'https://quick-gyan.vercel.app',
         'applicationCategory': 'EducationalApplication',
         'operatingSystem': 'All',
         'browserRequirements': 'Requires JavaScript. Requires HTML5.',
         'author': {
-          '@id': 'https://quickgyan.vercel.app/#organization'
+          '@id': 'https://quick-gyan.vercel.app/#organization'
         }
       }
     ]

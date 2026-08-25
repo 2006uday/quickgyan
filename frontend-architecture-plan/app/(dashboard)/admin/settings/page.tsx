@@ -38,7 +38,7 @@ export default function AdminSettingsPage() {
               </div>
               <div className="space-y-2">
                 <Label htmlFor="siteUrl">Platform URL</Label>
-                <Input id="siteUrl" defaultValue="https://quickgyan.vercel.app" />
+                <Input id="siteUrl" defaultValue="https://quick-gyan.vercel.app" />
               </div>
             </div>
             <div className="space-y-2">
