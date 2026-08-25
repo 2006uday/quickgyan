@@ -13,6 +13,7 @@ const manrope = Manrope({ subsets: ["latin"], variable: "--font-manrope" });
 export const metadata: Metadata = {
   title: 'quickGyan - Your One-Stop Platform for Academic Learning',
   description: 'The centralized academic platform for IGNOU BCA students. Access semester-wise books, sample papers, and AI-powered learning assistance.',
+  keywords: ['quickGyan', 'quickgyan', 'IGNOU BCA', 'IGNOU Study Material', 'IGNOU Books', 'IGNOU Sample Papers', 'Academic Learning', 'AI Learning Assistant'],
   generator: 'quickGyan',
   icons: {
     icon: [
