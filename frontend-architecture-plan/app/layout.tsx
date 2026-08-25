@@ -103,8 +103,62 @@ export default async function RootLayout({
   const user = await me();
   console.log("Server Component User Data:", user);
 
+  const jsonLd = {
+    '@context': 'https://schema.org',
+    '@graph': [
+      {
+        '@type': 'WebSite',
+        '@id': 'https://quickgyan.vercel.app/#website',
+        'url': 'https://quickgyan.vercel.app',
+        'name': 'quickGyan',
+        'description': 'The centralized academic platform for IGNOU BCA students. Access semester-wise books, sample papers, solved assignments, notes, and AI-powered learning assistance.',
+        'publisher': {
+          '@id': 'https://quickgyan.vercel.app/#organization'
+        },
+        'inLanguage': 'en-US'
+      },
+      {
+        '@type': 'Organization',
+        '@id': 'https://quickgyan.vercel.app/#organization',
+        'name': 'quickGyan',
+        'url': 'https://quickgyan.vercel.app',
+        'logo': {
+          '@type': 'ImageObject',
+          '@id': 'https://quickgyan.vercel.app/#logo',
+          'url': 'https://quickgyan.vercel.app/icon.svg',
+          'contentUrl': 'https://quickgyan.vercel.app/icon.svg',
+          'caption': 'quickGyan'
+        },
+        'image': {
+          '@id': 'https://quickgyan.vercel.app/#logo'
+        },
+        'sameAs': [
+          'https://github.com/2006uday/quickgyan'
+        ]
+      },
+      {
+        '@type': 'WebApplication',
+        '@id': 'https://quickgyan.vercel.app/#webapplication',
+        'name': 'quickGyan',
+        'url': 'https://quickgyan.vercel.app',
+        'applicationCategory': 'EducationalApplication',
+        'operatingSystem': 'All',
+        'browserRequirements': 'Requires JavaScript. Requires HTML5.',
+        'author': {
+          '@id': 'https://quickgyan.vercel.app/#organization'
+        }
+      }
+    ]
+  };
+
   return (
     <html lang="en">
+      <head>
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        />
+      </head>
       <body className={`${inter.variable} ${manrope.variable} font-sans antialiased`}>
         <AuthProvider initialUser={user}>
           {children}
