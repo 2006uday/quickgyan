@@ -36,14 +36,16 @@ import {
   Activity,
   Upload,
   AlertCircle,
+  Layers,
 } from "lucide-react"
 
 
 export default function AdminDashboard() {
-  const { getAdminStats, getAllUsers, getResources, getCourses, addAnnouncement } = useAuth()
+  const { getAdminStats, getAllUsers, getResources, getCourses, getPrograms, addAnnouncement } = useAuth()
   const [stats, setStats] = useState({
     totalUsers: 0,
     activeUsers: 0,
+    totalPrograms: 0,
     totalResources: 0,
     activeCourses: 0,
   })
@@ -62,6 +64,14 @@ export default function AdminDashboard() {
           ...prev,
           totalUsers: statsRes.data.totalUsers,
           activeUsers: statsRes.data.activeUsers
+        }))
+      }
+
+      const progRes = await getPrograms()
+      if (progRes.success && progRes.data) {
+        setStats(prev => ({
+          ...prev,
+          totalPrograms: progRes.data.length
         }))
       }
 
@@ -120,18 +130,18 @@ export default function AdminDashboard() {
 
   const statCards = [
     {
+      title: "Total Programs",
+      value: stats.totalPrograms.toString(),
+      change: "Active",
+      icon: Layers,
+      color: "bg-indigo-100 text-indigo-700",
+    },
+    {
       title: "Total Users",
       value: stats.totalUsers.toLocaleString(),
       change: "+12%",
       icon: Users,
       color: "bg-primary/10 text-primary",
-    },
-    {
-      title: "Currently Active",
-      value: stats.activeUsers.toLocaleString(),
-      change: "Live",
-      icon: Activity,
-      color: "bg-green-100 text-green-700",
     },
     {
       title: "Active Courses",
@@ -313,7 +323,13 @@ export default function AdminDashboard() {
           <CardDescription>Common administrative tasks</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+            <Link href="/admin/programs">
+              <Button variant="outline" className="h-auto w-full flex-col gap-2 p-4 bg-transparent">
+                <Layers className="h-5 w-5 text-primary" />
+                <span>Manage Programs</span>
+              </Button>
+            </Link>
             <Link href="/admin/resources">
               <Button variant="outline" className="h-auto w-full flex-col gap-2 p-4 bg-transparent">
                 <Upload className="h-5 w-5 text-primary" />

@@ -37,15 +37,16 @@ async function createBulkNotifications(resourceTitle, resourceType, course) {
 // admin can be upload their resourse
 async function uploadResourse(req, res) { // Using 'any' for 'req' to avoid 'file is possibly undefined' error
     try {
-        const { resourceTitle, resourceType, semester, course } = req.body;
+        const { resourceTitle, resourceType, semester, course, program } = req.body;
+        const progCode = (program || "BCA").trim().toUpperCase();
 
-        console.log("Incoming Resource Upload:", { resourceTitle, resourceType, semester, course });
+        console.log("Incoming Resource Upload:", { resourceTitle, resourceType, semester, course, program: progCode });
         const file = req.file;
         if (!file) {
             return res.status(400).json({ error: "No file uploaded" });
         }
 
-        const folderName = `bca/semester_${semester || 'unclassified'}`;
+        const folderName = `${progCode.toLowerCase()}/semester_${semester || 'unclassified'}`;
 
         // Convert the file buffer to a base64 string for Cloudinary
         const b64 = Buffer.from(file.buffer).toString("base64");
@@ -63,6 +64,7 @@ async function uploadResourse(req, res) { // Using 'any' for 'req' to avoid 'fil
             resourceType,
             semester: semester || 'unclassified',
             course,
+            program: progCode,
             fileUrl: result.secure_url,
             publicId: result.public_id,
             cloudinaryResourceType: result.resource_type
@@ -89,9 +91,10 @@ async function uploadResourse(req, res) { // Using 'any' for 'req' to avoid 'fil
 }
 async function getResource(req, res) {
     try {
-        const { search, semester, type, courseCode } = req.query;
+        const { search, semester, type, courseCode, program } = req.query;
         let query = {};
 
+        if (program) query.program = program.trim().toUpperCase();
         if (semester) query.semester = semester;
         if (type) query.resourceType = type;
         if (courseCode) query.course = courseCode;
@@ -129,7 +132,7 @@ async function getResourceById(req, res) {
 
 async function updateResource(req, res) {
     try {
-        const { id, resourceTitle, resourceType, semester, course } = req.body;
+        const { id, resourceTitle, resourceType, semester, course, program } = req.body;
         if (!id) {
             return res.status(400).json({ error: "Resource ID is required" });
         }
@@ -143,6 +146,9 @@ async function updateResource(req, res) {
             semester,
             course
         };
+        if (program) {
+            updateData.program = program.trim().toUpperCase();
+        }
 
         // Check if a new file is provided
         if (req.file) {
@@ -207,4 +213,79 @@ async function deleteResource(req, res) {
     }
 }
 
-export default { uploadResourse, getResource, getResourceById, updateResource, deleteResource }
+async function bulkUploadResources(req, res) {
+    try {
+        const files = req.files || [];
+        if (!files || files.length === 0) {
+            return res.status(400).json({ error: "No files uploaded for bulk processing" });
+        }
+
+        let itemsMetadata = [];
+        if (req.body.items) {
+            try {
+                itemsMetadata = typeof req.body.items === 'string' ? JSON.parse(req.body.items) : req.body.items;
+            } catch (e) {
+                console.error("Error parsing items metadata:", e);
+            }
+        }
+
+        const savedResources = [];
+        const failedItems = [];
+
+        for (let i = 0; i < files.length; i++) {
+            const file = files[i];
+            const meta = itemsMetadata[i] || {};
+
+            const resourceTitle = meta.resourceTitle || meta.title || file.originalname.replace(/\.[^/.]+$/, "").replace(/[-_]/g, " ");
+            const resourceType = meta.resourceType || meta.type || "book";
+            const semester = meta.semester || "1";
+            const course = meta.course || "GENERAL";
+            const progCode = (meta.program || req.body.program || "BCA").trim().toUpperCase();
+
+            try {
+                const folderName = `${progCode.toLowerCase()}/semester_${semester || 'unclassified'}`;
+                const b64 = Buffer.from(file.buffer).toString("base64");
+                const dataURI = "data:" + file.mimetype + ";base64," + b64;
+
+                const result = await cloudinary.uploader.upload(dataURI, {
+                    folder: folderName,
+                    resource_type: "auto",
+                });
+
+                const newResource = new Resource({
+                    resourceTitle,
+                    resourceType,
+                    semester,
+                    course,
+                    program: progCode,
+                    fileUrl: result.secure_url,
+                    publicId: result.public_id,
+                    cloudinaryResourceType: result.resource_type
+                });
+
+                await newResource.save();
+                savedResources.push(newResource);
+            } catch (err) {
+                console.error(`Failed to upload file ${file.originalname}:`, err);
+                failedItems.push({ filename: file.originalname, error: err.message });
+            }
+        }
+
+        if (savedResources.length > 0) {
+            const firstProg = savedResources[0].program || "BCA";
+            createBulkNotifications(`${savedResources.length} new materials`, "materials", firstProg);
+        }
+
+        return res.status(200).json({
+            message: `${savedResources.length} of ${files.length} resource(s) uploaded successfully`,
+            count: savedResources.length,
+            resources: savedResources,
+            failed: failedItems
+        });
+    } catch (error) {
+        console.error("Bulk upload error:", error);
+        return res.status(500).json({ error: error.message || "Internal server error during bulk upload" });
+    }
+}
+
+export default { uploadResourse, bulkUploadResources, getResource, getResourceById, updateResource, deleteResource }

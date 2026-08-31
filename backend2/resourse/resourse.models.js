@@ -23,6 +23,12 @@ const resourceSchema = new mongoose.Schema({
         type: String,
         required: true
     },
+    program: {
+        type: String,
+        trim: true,
+        default: "BCA",
+        uppercase: true
+    },
     fileUrl: {
         type: String,
         required: true

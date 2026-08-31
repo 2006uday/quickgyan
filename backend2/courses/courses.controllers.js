@@ -60,7 +60,8 @@ async function addCourse(req, res) {
             "Course Name": item.courseName,
             "Course Code": item.courseCode,
             "Credits": item.credits,
-            "Semester": item.semester
+            "Semester": item.semester,
+            "Program": (item.program || "BCA").trim().toUpperCase()
         }));
 
         // Validation: Verify all required fields for each item
@@ -94,7 +95,11 @@ async function addCourse(req, res) {
 // get courses data
 async function getCourses(req, res) {
     try {
-        const courses = await courseSchema.find();
+        const filter = {};
+        if (req.query?.program) {
+            filter.Program = req.query.program.trim().toUpperCase();
+        }
+        const courses = await courseSchema.find(filter);
         return res.status(200).json(courses);
     } catch (error) {
         console.log(error);
@@ -111,7 +116,7 @@ async function updateCourse(req, res) {
         if (!body) {
             return res.status(400).json({ message: "Request body is required" })
         }
-        const { courseName, courseCode, credits, semester, id } = body;
+        const { courseName, courseCode, credits, semester, program, id } = body;
         if (!id || !courseName || !courseCode || credits === undefined || semester === undefined) {
             return res.status(400).json({ message: "All fields are required (courseName, courseCode, credits, semester, id)" })
         }
@@ -125,12 +130,17 @@ async function updateCourse(req, res) {
         const oldCode = oldCourse["Course Code"];
 
         // Update the course
-        const course = await courseSchema.findByIdAndUpdate(id, {
+        const updateData = {
             "Course Name": courseName,
             "Course Code": courseCode,
             "Credits": credits,
             "Semester": semester
-        });
+        };
+        if (program) {
+            updateData["Program"] = program.trim().toUpperCase();
+        }
+
+        const course = await courseSchema.findByIdAndUpdate(id, updateData, { new: true });
 
         // If the code has changed, update any resources that were linked to the old code
         if (oldCode !== courseCode) {

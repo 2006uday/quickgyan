@@ -34,6 +34,7 @@ import coursesRoutes from "./courses/courses.routes.js";
 import resourseRoutes from "./resourse/resourse.routes.js";
 import notificationRoutes from "./notifications/notification.routes.js";
 import announcementRoutes from "./announcements/announcement.routes.js";
+import programsRoutes from "./programs/programs.routes.js";
 
 /**
  * Initialize the Express application instance.
@@ -99,6 +100,7 @@ app.use('/courses', coursesRoutes);
 app.use('/resources', resourseRoutes);
 app.use('/notifications', notificationRoutes);
 app.use('/announcements', announcementRoutes);
+app.use('/programs', programsRoutes);
 
 /**
  * Simple health check route to verify server status.

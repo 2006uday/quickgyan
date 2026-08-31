@@ -17,7 +17,19 @@ export interface User {
   lastActive?: string
 }
 
-
+export interface Program {
+  id: string
+  _id?: string
+  code: string
+  name: string
+  description?: string
+  totalSemesters: number
+  category?: string
+  status?: "active" | "inactive"
+  courseCount?: number
+  resourceCount?: number
+  createdAt?: string
+}
 
 export interface SignupData {
   name: string
@@ -29,6 +41,13 @@ export interface SignupData {
 interface AuthContextType {
   user: User | null
   isLoading: boolean
+  programs: Program[]
+  selectedProgram: string
+  setSelectedProgram: (code: string) => void
+  getPrograms: () => Promise<{ success: boolean; data?: Program[]; error?: string }>
+  addPrograms: (programs: any | any[]) => Promise<{ success: boolean; error?: string }>
+  updateProgram: (data: { id: string; code: string; name: string; description?: string; totalSemesters: number; category?: string; status?: string }) => Promise<{ success: boolean; error?: string }>
+  deleteProgram: (id: string) => Promise<{ success: boolean; error?: string }>
   /** POST /auth/login — validates credentials and triggers OTP dispatch */
   login: (email: string, password: string) => Promise<{ success: boolean; error?: string }>
   /** POST /auth/otp/verify — verifies the 6-digit OTP for login or signup */
@@ -44,9 +63,9 @@ interface AuthContextType {
   checkUser: () => Promise<void>
   verifyOldPassword: (oldPassword: string) => Promise<{ success: boolean; email?: string; error?: string }>
   changePassword: (newPassword: string) => Promise<{ success: boolean; error?: string }>
-  addCourses: (courseName: string, courseCode: string, credits: number, semester: number) => Promise<{ success: boolean; error?: string }>
-  getCourses: () => Promise<{ success: boolean; data?: any; error?: string }>
-  updateCourse: (courseName: string, courseCode: string, credits: number, semester: number, id: string) => Promise<{ success: boolean; error?: string }>
+  addCourses: (courseName: string, courseCode: string, credits: number, semester: number, program?: string) => Promise<{ success: boolean; error?: string }>
+  getCourses: (program?: string) => Promise<{ success: boolean; data?: any; error?: string }>
+  updateCourse: (courseName: string, courseCode: string, credits: number, semester: number, id: string, program?: string) => Promise<{ success: boolean; error?: string }>
   deleteCourse: (id: string) => Promise<{ success: boolean; error?: string }>
   getAdminStats: () => Promise<{ success: boolean; data?: any; error?: string }>
   getAllUsers: () => Promise<{ success: boolean; data?: any; error?: string }>
@@ -62,6 +81,7 @@ interface AuthContextType {
   getAIHistory: () => Promise<{ success: boolean; data?: any; error?: string }>
   clearAIHistory: () => Promise<{ success: boolean; error?: string }>
   addResource: (formData: FormData) => Promise<{ success: boolean; error?: string }>
+  bulkAddResources: (formData: FormData) => Promise<{ success: boolean; data?: any; error?: string }>
   updateResource: (formData: FormData) => Promise<{ success: boolean; error?: string }>
   deleteResource: (id: string) => Promise<{ success: boolean; error?: string }>
   deleteAnnouncement: (id: string) => Promise<{ success: boolean; error?: string }>
@@ -71,7 +91,7 @@ interface AuthContextType {
 // Base URL — change once, works everywhere
 // ---------------------------------------------------------------------------
 
-const API_BASE_URL = "https://quickgyan-ecl3.vercel.app"
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "https://quickgyan-ecl3.vercel.app"
 // const API_BASE_URL = "/api"
 const API_BASE = `${API_BASE_URL}/auth`
 const API_BASE_AI = `${API_BASE_URL}/ai-chat`
@@ -79,6 +99,7 @@ const API_BASE_COURSES = `${API_BASE_URL}/courses`
 const API_BASE_RESOURCES = `${API_BASE_URL}/resources`
 const API_BASE_NOTIFICATIONS = `${API_BASE_URL}/notifications`
 const API_BASE_ANNOUNCEMENTS = `${API_BASE_URL}/announcements`
+const API_BASE_PROGRAMS = `${API_BASE_URL}/programs`
 
 
 const axiosConfig = {
@@ -112,6 +133,118 @@ export function AuthProvider({ children, initialUser }: { children: ReactNode, i
   // ---------------------------------------------------------------------------
 
   const [user, setUser] = useState<User | null>(initialUser || null)
+  const [programs, setPrograms] = useState<Program[]>([])
+  const [selectedProgram, setSelectedProgramState] = useState<string>("BCA")
+
+  const setSelectedProgram = (code: string) => {
+    const formatted = (code || "BCA").toUpperCase()
+    setSelectedProgramState(formatted)
+    if (typeof window !== "undefined") {
+      localStorage.setItem("quickgyan_selected_program", formatted)
+    }
+  }
+
+  const defaultProgramsList: Program[] = [
+    {
+      id: "bca-default",
+      code: "BCA",
+      name: "Bachelor of Computer Applications",
+      description: "3-Year Undergraduate Degree in Computer Applications",
+      totalSemesters: 6,
+      category: "Undergraduate",
+      status: "active"
+    },
+    {
+      id: "mca-default",
+      code: "MCA",
+      name: "Master of Computer Applications",
+      description: "2-Year Postgraduate Degree in Advanced Computing & AI",
+      totalSemesters: 4,
+      category: "Postgraduate",
+      status: "active"
+    },
+    {
+      id: "bba-default",
+      code: "BBA",
+      name: "Bachelor of Business Administration",
+      description: "3-Year Undergraduate Degree in Management & Enterprise",
+      totalSemesters: 6,
+      category: "Undergraduate",
+      status: "active"
+    },
+    {
+      id: "bsccs-default",
+      code: "BSCCS",
+      name: "B.Sc Computer Science",
+      description: "3-Year Bachelor of Science in Computer Science",
+      totalSemesters: 6,
+      category: "Undergraduate",
+      status: "active"
+    }
+  ]
+
+  const getPrograms = async (): Promise<{ success: boolean; data?: Program[]; error?: string }> => {
+    try {
+      const res = await axios.get(`${API_BASE_PROGRAMS}/get-programs`, axiosConfig)
+      if (Array.isArray(res.data) && res.data.length > 0) {
+        const formatted: Program[] = res.data.map((p: any) => ({
+          id: p._id || p.id,
+          code: p.code,
+          name: p.name,
+          description: p.description,
+          totalSemesters: p.totalSemesters || 6,
+          category: p.category || "Undergraduate",
+          status: p.status || "active",
+          courseCount: p.courseCount || 0,
+          resourceCount: p.resourceCount || 0,
+          createdAt: p.createdAt
+        }))
+        setPrograms(formatted)
+        return { success: true, data: formatted }
+      }
+      setPrograms(defaultProgramsList)
+      return { success: true, data: defaultProgramsList }
+    } catch (err) {
+      if (programs.length === 0) {
+        setPrograms(defaultProgramsList)
+      }
+      return { success: true, data: defaultProgramsList }
+    }
+  }
+
+  const addPrograms = async (programsData: any | any[]): Promise<{ success: boolean; error?: string }> => {
+    try {
+      const payload = Array.isArray(programsData) ? programsData : [programsData]
+      await axios.post(`${API_BASE_PROGRAMS}/add-program`, payload, axiosConfig)
+      await getPrograms()
+      return { success: true }
+    } catch (err) {
+      return { success: false, error: extractError(err, "Failed to add program(s).") }
+    }
+  }
+
+  const updateProgram = async (data: { id: string; code: string; name: string; description?: string; totalSemesters: number; category?: string; status?: string }): Promise<{ success: boolean; error?: string }> => {
+    try {
+      await axios.put(`${API_BASE_PROGRAMS}/update-program`, data, axiosConfig)
+      await getPrograms()
+      return { success: true }
+    } catch (err) {
+      return { success: false, error: extractError(err, "Failed to update program.") }
+    }
+  }
+
+  const deleteProgram = async (id: string): Promise<{ success: boolean; error?: string }> => {
+    try {
+      await axios.delete(`${API_BASE_PROGRAMS}/delete-program`, {
+        ...axiosConfig,
+        data: { id }
+      })
+      await getPrograms()
+      return { success: true }
+    } catch (err) {
+      return { success: false, error: extractError(err, "Failed to delete program.") }
+    }
+  }
 
   const checkUser = async () => {
     try {
@@ -153,17 +286,24 @@ export function AuthProvider({ children, initialUser }: { children: ReactNode, i
   };
 
   useEffect(() => {
+    if (typeof window !== "undefined") {
+      const savedProg = localStorage.getItem("quickgyan_selected_program")
+      if (savedProg) setSelectedProgramState(savedProg.toUpperCase())
+    }
     checkUser();
+    getPrograms();
   }, [])
+
   const updateCourse = async (
     courseName: string,
     courseCode: string,
     credits: number,
     semester: number,
-    id: string
+    id: string,
+    program?: string
   ): Promise<{ success: boolean; error?: string }> => {
     try {
-      const res = await axios.put(`${API_BASE_COURSES}/update-course`, { courseName, courseCode, credits, semester, id }, axiosConfig)
+      const res = await axios.put(`${API_BASE_COURSES}/update-course`, { courseName, courseCode, credits, semester, program, id }, axiosConfig)
       if (res.data?.user) {
         const u = res.data.user;
         const userData: User = {
@@ -388,18 +528,19 @@ export function AuthProvider({ children, initialUser }: { children: ReactNode, i
     }
   }
 
-  const addCourses = async (courseName: string, courseCode: string, credits: number, semester: number): Promise<{ success: boolean; error?: string }> => {
+  const addCourses = async (courseName: string, courseCode: string, credits: number, semester: number, program?: string): Promise<{ success: boolean; error?: string }> => {
     try {
-      const res = await axios.post(`${API_BASE_COURSES}/add-course`, { courseName, courseCode, credits, semester }, axiosConfig)
+      const res = await axios.post(`${API_BASE_COURSES}/add-course`, { courseName, courseCode, credits, semester, program: program || selectedProgram }, axiosConfig)
       return { success: true }
     } catch (err) {
       return { success: false, error: extractError(err, "Failed to add course. Please try again.") }
     }
   }
 
-  const getCourses = async (): Promise<{ success: boolean; data?: any; error?: string }> => {
+  const getCourses = async (program?: string): Promise<{ success: boolean; data?: any; error?: string }> => {
     try {
-      const res = await axios.get(`${API_BASE_COURSES}/get-courses`, axiosConfig)
+      const params = program ? { program } : {}
+      const res = await axios.get(`${API_BASE_COURSES}/get-courses`, { ...axiosConfig, params })
       return { success: true, data: res.data }
     } catch (err) {
       return { success: false, error: extractError(err, "Failed to get courses. Please try again.") }
@@ -574,6 +715,21 @@ export function AuthProvider({ children, initialUser }: { children: ReactNode, i
     }
   }
 
+  const bulkAddResources = async (formData: FormData) => {
+    try {
+      const res = await axios.post(`${API_BASE_RESOURCES}/bulk-upload`, formData, {
+        ...axiosConfig,
+        headers: {
+          ...axiosConfig.headers,
+          "Content-Type": "multipart/form-data",
+        },
+      })
+      return { success: true, data: res.data }
+    } catch (err) {
+      return { success: false, error: extractError(err, "Failed to bulk upload resources") }
+    }
+  }
+
   const updateResource = async (formData: FormData) => {
     try {
       await axios.put(`${API_BASE_RESOURCES}/updateresource`, formData, {
@@ -616,6 +772,13 @@ export function AuthProvider({ children, initialUser }: { children: ReactNode, i
 
   return (
     <AuthContext.Provider value={{
+      programs,
+      selectedProgram,
+      setSelectedProgram,
+      getPrograms,
+      addPrograms,
+      updateProgram,
+      deleteProgram,
       addCourses,
       updateCourse,
       deleteCourse,
@@ -647,6 +810,7 @@ export function AuthProvider({ children, initialUser }: { children: ReactNode, i
       getAIHistory,
       clearAIHistory,
       addResource,
+      bulkAddResources,
       updateResource,
       deleteResource,
       deleteAnnouncement

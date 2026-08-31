@@ -9,6 +9,7 @@ import resourses from './resourse.controllers.js';
 const router = Router();
 
 router.post("/addresource", upload.single("file"), resourses.uploadResourse);
+router.post("/bulk-upload", upload.array("files", 25), resourses.bulkUploadResources);
 router.get("/getresource", resourses.getResource);
 router.get("/getresource/:id", resourses.getResourceById);
 router.put("/updateresource", upload.single("file"), resourses.updateResource);

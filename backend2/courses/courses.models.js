@@ -24,6 +24,12 @@ const courseSchema = new mongoose.Schema(
         "Semester": {
             type: String,
             required: true
+        },
+        "Program": {
+            type: String,
+            trim: true,
+            default: "BCA",
+            uppercase: true
         }
     }
 )

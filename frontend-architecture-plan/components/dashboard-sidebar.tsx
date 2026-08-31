@@ -14,6 +14,7 @@ import {
   LogOut,
   Shield,
   Activity,
+  Layers,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 
@@ -27,6 +28,7 @@ const studentNavItems = [
 
 const adminNavItems = [
   { name: "Dashboard", href: "/admin", icon: LayoutDashboard },
+  { name: "Manage Programs", href: "/admin/programs", icon: Layers },
   { name: "Manage Courses", href: "/admin/courses", icon: GraduationCap },
   { name: "Manage Resources", href: "/admin/resources", icon: FileText },
   { name: "Users", href: "/admin/users", icon: Shield },

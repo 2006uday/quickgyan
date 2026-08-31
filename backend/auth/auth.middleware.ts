@@ -1,4 +1,4 @@
-import { Request, Response, NextFunction } from "express";
+ import { Request, Response, NextFunction } from "express";
 import jwt from "jsonwebtoken";
 import dotenv from "dotenv";
 import { User } from "./auth.model";
@@ -18,6 +18,9 @@ async function checkAccessTokenIsAbleToAccessMiddleware(req: any, res: any, next
         next();
     } catch (error: any) {
         console.log(error);
+        if (error.name === "JsonWebTokenError" || error.name === "TokenExpiredError") {
+            return res.status(401).json({ error: "Unauthorized" });
+        }
         return res.status(500).json({ error: "Internal server error" });
     }
 }
@@ -44,6 +47,9 @@ async function detailsMiddleware(req: any, res: any, next: any) {
         next();
     } catch (error: any) {
         console.log(error);
+        if (error.name === "JsonWebTokenError" || error.name === "TokenExpiredError") {
+            return res.status(401).json({ message: "Unauthorized" });
+        }
         return res.status(500).json({ error: "Internal server error" });
     }
 }
@@ -59,6 +65,9 @@ async function logoutMiddleware(req: any, res: any, next: any) {
         next();
     } catch (error: any) {
         console.log(error);
+        if (error.name === "JsonWebTokenError" || error.name === "TokenExpiredError") {
+            return res.status(401).json({ message: "Unauthorized" });
+        }
         return res.status(500).json({ error: "Internal server error" });
     }
 }
@@ -75,6 +84,9 @@ async function passwordChangeMiddleware(req: any, res: any, next: any) {
         next();
     } catch (error: any) {
         console.log(error);
+        if (error.name === "JsonWebTokenError" || error.name === "TokenExpiredError") {
+            return res.status(401).json({ error: "Unauthorized" });
+        }
         return res.status(500).json({ error: "Internal server error" });
     }
 }
