@@ -10,6 +10,7 @@ import { ScrollArea } from "@/components/ui/scroll-area"
 import { cn } from "@/lib/utils"
 import ReactMarkdown from "react-markdown"
 import remarkGfm from "remark-gfm"
+import Link from "next/link"
 import {
   Brain,
   Send,
@@ -21,6 +22,10 @@ import {
   BookOpen,
   Code,
   Calculator,
+  Lock,
+  History,
+  ShieldCheck,
+  ArrowRight,
 } from "lucide-react"
 
 interface Message {
@@ -56,7 +61,7 @@ const suggestedQuestions = [
 import { useAuth } from "@/lib/auth-context"
 
 export default function AIChatPage() {
-  const { askAI, getAIHistory, clearAIHistory } = useAuth()
+  const { user, isLoading: isAuthLoading, askAI, getAIHistory, clearAIHistory } = useAuth()
   const [messages, setMessages] = useState<Message[]>([])
   const [input, setInput] = useState("")
   const [isLoading, setIsLoading] = useState(false)
@@ -64,6 +69,10 @@ export default function AIChatPage() {
   const scrollRef = useRef<HTMLDivElement>(null)
 
   const fetchHistory = async () => {
+    if (!user) {
+      setIsHistoryLoading(false)
+      return
+    }
     try {
       const res = await getAIHistory()
       if (res.success && res.data?.messages) {
@@ -83,8 +92,12 @@ export default function AIChatPage() {
   }
 
   useEffect(() => {
-    fetchHistory()
-  }, [])
+    if (user) {
+      fetchHistory()
+    } else if (!isAuthLoading) {
+      setIsHistoryLoading(false)
+    }
+  }, [user, isAuthLoading])
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -93,7 +106,7 @@ export default function AIChatPage() {
   }, [messages])
 
   const handleSend = async (content: string = input) => {
-    if (!content.trim() || isLoading) return
+    if (!user || !content.trim() || isLoading) return
 
     const userMessage: Message = {
       id: Date.now().toString(),
@@ -145,6 +158,106 @@ export default function AIChatPage() {
     if (res.success) {
       setMessages([])
     }
+  }
+
+  if (isAuthLoading) {
+    return (
+      <div className="flex h-[calc(100vh-10rem)] items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    )
+  }
+
+  if (!user) {
+    return (
+      <div className="flex min-h-[calc(100vh-10rem)] items-center justify-center p-2 sm:p-4">
+        <Card className="w-full max-w-2xl border-border/60 bg-gradient-to-b from-card via-card to-background shadow-xl">
+          <CardContent className="flex flex-col items-center p-6 sm:p-10 text-center">
+            {/* Top Tag */}
+            <div className="inline-flex items-center gap-1.5 rounded-full border border-amber-500/30 bg-amber-500/10 px-3 py-1 text-xs font-semibold text-amber-600 dark:text-amber-400 mb-6">
+              <Lock className="h-3.5 w-3.5" />
+              <span>Login Required</span>
+            </div>
+
+            {/* Glowing Icon */}
+            <div className="relative mb-6">
+              <div className="absolute inset-0 rounded-2xl bg-primary/20 blur-xl" />
+              <div className="relative flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10 border border-primary/20 text-primary shadow-inner">
+                <Brain className="h-8 w-8" />
+              </div>
+            </div>
+
+            {/* Title & Description */}
+            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground">
+              Sign in to Use AI Doubt Lab
+            </h1>
+            <p className="mt-3 max-w-lg text-sm sm:text-base text-muted-foreground leading-relaxed">
+              quickGyan AI Assistant saves your chat history, doubt resolutions, and code explanations so you can review them anytime and pick up right where you left off.
+            </p>
+
+            {/* Benefit Highlights */}
+            <div className="mt-8 grid grid-cols-1 sm:grid-cols-3 gap-3 w-full text-left">
+              <div className="rounded-xl border border-border/60 bg-muted/30 p-3.5 transition-colors hover:bg-muted/50">
+                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10 text-primary mb-2.5">
+                  <History className="h-4 w-4" />
+                </div>
+                <h3 className="text-sm font-semibold">Saved History</h3>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Never lose an answer or code snippet with persistent chat logs.
+                </p>
+              </div>
+
+              <div className="rounded-xl border border-border/60 bg-muted/30 p-3.5 transition-colors hover:bg-muted/50">
+                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10 text-primary mb-2.5">
+                  <Sparkles className="h-4 w-4" />
+                </div>
+                <h3 className="text-sm font-semibold">24/7 AI Tutor</h3>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Instant academic explanations for C, OOP, DBMS, Maths, and DSA.
+                </p>
+              </div>
+
+              <div className="rounded-xl border border-border/60 bg-muted/30 p-3.5 transition-colors hover:bg-muted/50">
+                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10 text-primary mb-2.5">
+                  <ShieldCheck className="h-4 w-4" />
+                </div>
+                <h3 className="text-sm font-semibold">Syllabus-Aligned</h3>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Tailored specifically to your BCA/university semester curriculum.
+                </p>
+              </div>
+            </div>
+
+            {/* Action Buttons */}
+            <div className="mt-8 flex flex-col sm:flex-row items-center gap-3 w-full max-w-sm">
+              <Button asChild size="lg" className="w-full gap-2 shadow-md shadow-primary/20">
+                <Link href="/login?redirect=/dashboard/ai-chat">
+                  Log in to Continue
+                  <ArrowRight className="h-4 w-4" />
+                </Link>
+              </Button>
+              <Button asChild variant="outline" size="lg" className="w-full">
+                <Link href="/signup?redirect=/dashboard/ai-chat">
+                  Create Account
+                </Link>
+              </Button>
+            </div>
+
+            <p className="mt-6 text-xs text-muted-foreground">
+              You can still browse{" "}
+              <Link href="/dashboard/courses" className="font-medium text-primary hover:underline">
+                Courses
+              </Link>{" "}
+              and{" "}
+              <Link href="/dashboard/resources" className="font-medium text-primary hover:underline">
+                Resources
+              </Link>{" "}
+              without an account.
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+    )
   }
 
   return (
@@ -228,11 +341,11 @@ export default function AIChatPage() {
                       "prose prose-sm dark:prose-invert max-w-none break-words leading-relaxed",
                       message.role === "user" ? "prose-p:text-primary-foreground/90" : "prose-p:text-foreground/90"
                     )}>
-                      <ReactMarkdown 
+                      <ReactMarkdown
                         remarkPlugins={[remarkGfm]}
                         components={{
                           code: ({ node, ...props }) => (
-                            <code className="bg-slate-900/10 text-slate-900 dark:bg-slate-100/10 dark:text-slate-100 rounded px-1.5 py-0.5 font-mono text-xs font-semibold" {...props} />
+                            <code className="bg-slate-900/10 text-foreground dark:bg-slate-100/10 dark:text-slate-100 rounded px-1.5 py-0.5 font-mono text-xs font-semibold" {...props} />
                           ),
                           pre: ({ node, ...props }) => (
                             <pre className="bg-slate-950 text-slate-50 p-4 rounded-xl border border-slate-800 overflow-x-auto my-4 shadow-xl scrollbar-thin" {...props} />

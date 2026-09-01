@@ -1,8 +1,8 @@
 "use client"
 
-import React, { useState } from "react"
+import React, { useState, Suspense } from "react"
 import Link from "next/link"
-import { useRouter } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -10,8 +10,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { useAuth } from "@/lib/auth-context"
 import { BookOpen, Loader2, Check } from "lucide-react"
 
-export default function SignupPage() {
+function SignupForm() {
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const redirectUrl = searchParams.get("redirect") || ""
   const { signup } = useAuth()
 
   const [isLoading, setIsLoading] = useState(false)
@@ -57,8 +59,9 @@ export default function SignupPage() {
     setIsLoading(false)
 
     if (result.success) {
+      const redirectParam = redirectUrl ? `&redirect=${encodeURIComponent(redirectUrl)}` : ""
       router.push(
-        `/signup/verify-otp?email=${encodeURIComponent(formData.email)}`
+        `/signup/verify-otp?email=${encodeURIComponent(formData.email)}${redirectParam}`
       )
     } else {
       setError(result.error || "Signup failed")
@@ -71,6 +74,128 @@ export default function SignupPage() {
     { met: /[0-9]/.test(formData.password), text: "One number" },
   ]
 
+  const loginHref = redirectUrl
+    ? `/login?redirect=${encodeURIComponent(redirectUrl)}`
+    : "/login"
+
+  return (
+    <Card className="w-full max-w-md">
+      <CardHeader className="space-y-1 text-center">
+        <CardTitle className="text-2xl font-bold">Create an account</CardTitle>
+        <CardDescription>
+          Enter your details to get started with quickGyan
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="name">Full Name</Label>
+            <Input
+              id="name"
+              name="name"
+              type="text"
+              placeholder="Enter your full name"
+              value={formData.name}
+              onChange={handleChange}
+              required
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="email">Email</Label>
+            <Input
+              id="email"
+              name="email"
+              type="email"
+              placeholder="Enter your email address"
+              value={formData.email}
+              onChange={handleChange}
+              required
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="enrollmentNo">Enrollment Number</Label>
+            <Input
+              id="enrollmentNo"
+              name="enrollmentNo"
+              type="text"
+              placeholder="Enter your IGNOU enrollment no."
+              value={formData.enrollmentNo}
+              onChange={handleChange}
+              required
+            />
+            <p className="text-xs text-muted-foreground">
+              This is required for IGNOU student validation
+            </p>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="password">Password</Label>
+            <Input
+              id="password"
+              name="password"
+              type="password"
+              placeholder="Create a strong password"
+              value={formData.password}
+              onChange={handleChange}
+              required
+            />
+            {formData.password && (
+              <div className="space-y-1 pt-1">
+                {passwordRequirements.map((req, i) => (
+                  <div key={i} className="flex items-center gap-2 text-xs">
+                    <Check
+                      className={`h-3 w-3 ${req.met ? "text-green-500" : "text-muted-foreground"}`}
+                    />
+                    <span className={req.met ? "text-green-500" : "text-muted-foreground"}>
+                      {req.text}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="confirmPassword">Confirm Password</Label>
+            <Input
+              id="confirmPassword"
+              name="confirmPassword"
+              type="password"
+              placeholder="Confirm your password"
+              value={formData.confirmPassword}
+              onChange={handleChange}
+              required
+            />
+          </div>
+
+          {error && <p className="text-sm text-destructive">{error}</p>}
+
+          <Button type="submit" className="w-full" disabled={isLoading}>
+            {isLoading ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Creating account...
+              </>
+            ) : (
+              "Create account"
+            )}
+          </Button>
+
+          <p className="text-center text-sm text-muted-foreground">
+            Already have an account?{" "}
+            <Link href={loginHref} className="font-medium text-primary hover:underline">
+              Sign in
+            </Link>
+          </p>
+        </form>
+      </CardContent>
+    </Card>
+  )
+}
+
+export default function SignupPage() {
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-background px-4 py-12">
       {/* Background decoration */}
@@ -86,119 +211,13 @@ export default function SignupPage() {
         <span className="text-2xl font-bold text-foreground">quickGyan</span>
       </Link>
 
-      <Card className="w-full max-w-md">
-        <CardHeader className="space-y-1 text-center">
-          <CardTitle className="text-2xl font-bold">Create an account</CardTitle>
-          <CardDescription>
-            Enter your details to get started with quickGyan
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="name">Full Name</Label>
-              <Input
-                id="name"
-                name="name"
-                type="text"
-                placeholder="Enter your full name"
-                value={formData.name}
-                onChange={handleChange}
-                required
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
-              <Input
-                id="email"
-                name="email"
-                type="email"
-                placeholder="Enter your email address"
-                value={formData.email}
-                onChange={handleChange}
-                required
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="enrollmentNo">Enrollment Number</Label>
-              <Input
-                id="enrollmentNo"
-                name="enrollmentNo"
-                type="text"
-                placeholder="Enter your IGNOU enrollment no."
-                value={formData.enrollmentNo}
-                onChange={handleChange}
-                required
-              />
-              <p className="text-xs text-muted-foreground">
-                This is required for IGNOU student validation
-              </p>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
-              <Input
-                id="password"
-                name="password"
-                type="password"
-                placeholder="Create a strong password"
-                value={formData.password}
-                onChange={handleChange}
-                required
-              />
-              {formData.password && (
-                <div className="space-y-1 pt-1">
-                  {passwordRequirements.map((req, i) => (
-                    <div key={i} className="flex items-center gap-2 text-xs">
-                      <Check
-                        className={`h-3 w-3 ${req.met ? "text-green-500" : "text-muted-foreground"}`}
-                      />
-                      <span className={req.met ? "text-green-500" : "text-muted-foreground"}>
-                        {req.text}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="confirmPassword">Confirm Password</Label>
-              <Input
-                id="confirmPassword"
-                name="confirmPassword"
-                type="password"
-                placeholder="Confirm your password"
-                value={formData.confirmPassword}
-                onChange={handleChange}
-                required
-              />
-            </div>
-
-            {error && <p className="text-sm text-destructive">{error}</p>}
-
-            <Button type="submit" className="w-full" disabled={isLoading}>
-              {isLoading ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Creating account...
-                </>
-              ) : (
-                "Create account"
-              )}
-            </Button>
-
-            <p className="text-center text-sm text-muted-foreground">
-              Already have an account?{" "}
-              <Link href="/login" className="font-medium text-primary hover:underline">
-                Sign in
-              </Link>
-            </p>
-          </form>
-        </CardContent>
-      </Card>
+      <Suspense fallback={
+        <div className="flex justify-center p-8">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </div>
+      }>
+        <SignupForm />
+      </Suspense>
     </div>
   )
 }

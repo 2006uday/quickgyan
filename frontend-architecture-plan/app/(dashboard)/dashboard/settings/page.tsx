@@ -25,6 +25,13 @@ export default function SettingsPage() {
     enrollmentNo: "",
   })
 
+  // Protect settings route: redirect to login if not authenticated
+  useEffect(() => {
+    if (!isLoading && !user) {
+      router.replace("/login?redirect=/dashboard/settings")
+    }
+  }, [user, isLoading, router])
+
   // Sync profile state when user data is available
   useEffect(() => {
     if (user) {
@@ -35,6 +42,14 @@ export default function SettingsPage() {
       })
     }
   }, [user])
+
+  if (isLoading || !user) {
+    return (
+      <div className="flex min-h-[400px] items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    )
+  }
 
   const [notifications, setNotifications] = useState({
     email: true,

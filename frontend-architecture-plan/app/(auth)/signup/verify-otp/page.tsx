@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useRef, useEffect } from "react"
+import { useState, useRef, useEffect, Suspense } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
@@ -8,10 +8,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { useAuth } from "@/lib/auth-context"
 import { BookOpen, Loader2, MailCheck, RefreshCw } from "lucide-react"
 
-export default function VerifyOtpPage() {
+function VerifyOtpForm() {
     const router = useRouter()
     const searchParams = useSearchParams()
     const email = searchParams.get("email") ?? ""
+    const redirectUrl = searchParams.get("redirect") || "/dashboard"
 
     const { verifyOtp, sendOtp } = useAuth()
 
@@ -69,17 +70,16 @@ export default function VerifyOtpPage() {
         const code = otp.join("")
         if (code.length < 6) {
             setError("Please enter the complete 6-digit OTP.")
-            return
         }
         setIsLoading(true)
         setError("")
 
         const result = await verifyOtp(email, code)
-        console.log("Here is data :",result)
+        console.log("Here is data :", result)
         if (result.success) {
             // verifyOtp already sets user in context + localStorage
             // so the dashboard AuthProvider will hydrate the session correctly
-            router.push('/dashboard')
+            router.push(redirectUrl)
         } else {
             setIsLoading(false)
             setError(result.error || "Invalid OTP. Please try again.")
@@ -101,6 +101,102 @@ export default function VerifyOtpPage() {
     }
 
     return (
+        <Card className="w-full max-w-md">
+            <CardHeader className="space-y-3 text-center">
+                <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-primary/10">
+                    <MailCheck className="h-7 w-7 text-primary" />
+                </div>
+                <CardTitle className="text-2xl font-bold">Verify your email</CardTitle>
+                <CardDescription className="text-sm">
+                    We sent a 6-digit OTP to{" "}
+                    {email ? (
+                        <span className="font-medium text-foreground">{email}</span>
+                    ) : (
+                        "your email address"
+                    )}
+                    . Enter it below to complete your registration.
+                </CardDescription>
+            </CardHeader>
+
+            <CardContent>
+                <form onSubmit={handleSubmit} className="space-y-6">
+                    {/* OTP Inputs */}
+                    <div className="flex justify-center gap-3">
+                        {otp.map((digit, index) => (
+                            <input
+                                key={index}
+                                id={`otp-${index}`}
+                                ref={(el) => { inputRefs.current[index] = el }}
+                                type="text"
+                                inputMode="numeric"
+                                maxLength={1}
+                                value={digit}
+                                onChange={(e) => handleChange(index, e.target.value)}
+                                onKeyDown={(e) => handleKeyDown(index, e)}
+                                onPaste={handlePaste}
+                                className={[
+                                    "h-12 w-12 rounded-lg border-2 bg-background text-center text-lg font-semibold",
+                                    "transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2",
+                                    digit ? "border-primary text-foreground" : "border-input text-muted-foreground",
+                                    error ? "border-destructive" : "",
+                                ].join(" ")}
+                            />
+                        ))}
+                    </div>
+
+                    {error && (
+                        <p className="text-center text-sm text-destructive">{error}</p>
+                    )}
+
+                    <Button
+                        id="verify-otp-btn"
+                        type="submit"
+                        className="w-full"
+                        disabled={isLoading || otp.join("").length < 6}
+                    >
+                        {isLoading ? (
+                            <>
+                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                Verifying...
+                            </>
+                        ) : (
+                            "Verify OTP"
+                        )}
+                    </Button>
+
+                    {/* Resend section */}
+                    <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
+                        <span>Didn&apos;t receive it?</span>
+                        <button
+                            id="resend-otp-btn"
+                            type="button"
+                            onClick={handleResend}
+                            disabled={isResending || resendCooldown > 0}
+                            className="flex items-center gap-1 font-medium text-primary hover:underline disabled:cursor-not-allowed disabled:opacity-50"
+                        >
+                            {isResending ? (
+                                <Loader2 className="h-3 w-3 animate-spin" />
+                            ) : (
+                                <RefreshCw className="h-3 w-3" />
+                            )}
+                            {resendCooldown > 0 ? `Resend in ${resendCooldown}s` : "Resend OTP"}
+                        </button>
+                    </div>
+
+                    <p className="text-center text-sm text-muted-foreground">
+                        Wrong email?{" "}
+                        <Link href="/signup" className="font-medium text-primary hover:underline">
+                            Go back
+                        </Link>
+                    </p>
+                </form>
+            </CardContent>
+        </Card>
+    )
+}
+
+export default function VerifyOtpPage() {
+    return (
         <div className="flex min-h-screen flex-col items-center justify-center bg-background px-4 py-12">
             {/* Background decoration */}
             <div className="pointer-events-none fixed inset-0 -z-10">
@@ -115,97 +211,13 @@ export default function VerifyOtpPage() {
                 <span className="text-2xl font-bold text-foreground">quickGyan</span>
             </Link>
 
-            <Card className="w-full max-w-md">
-                <CardHeader className="space-y-3 text-center">
-                    <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-primary/10">
-                        <MailCheck className="h-7 w-7 text-primary" />
-                    </div>
-                    <CardTitle className="text-2xl font-bold">Verify your email</CardTitle>
-                    <CardDescription className="text-sm">
-                        We sent a 6-digit OTP to{" "}
-                        {email ? (
-                            <span className="font-medium text-foreground">{email}</span>
-                        ) : (
-                            "your email address"
-                        )}
-                        . Enter it below to complete your registration.
-                    </CardDescription>
-                </CardHeader>
-
-                <CardContent>
-                    <form onSubmit={handleSubmit} className="space-y-6">
-                        {/* OTP Inputs */}
-                        <div className="flex justify-center gap-3">
-                            {otp.map((digit, index) => (
-                                <input
-                                    key={index}
-                                    id={`otp-${index}`}
-                                    ref={(el) => { inputRefs.current[index] = el }}
-                                    type="text"
-                                    inputMode="numeric"
-                                    maxLength={1}
-                                    value={digit}
-                                    onChange={(e) => handleChange(index, e.target.value)}
-                                    onKeyDown={(e) => handleKeyDown(index, e)}
-                                    onPaste={handlePaste}
-                                    className={[
-                                        "h-12 w-12 rounded-lg border-2 bg-background text-center text-lg font-semibold",
-                                        "transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2",
-                                        digit ? "border-primary text-foreground" : "border-input text-muted-foreground",
-                                        error ? "border-destructive" : "",
-                                    ].join(" ")}
-                                />
-                            ))}
-                        </div>
-
-                        {error && (
-                            <p className="text-center text-sm text-destructive">{error}</p>
-                        )}
-
-                        <Button
-                            id="verify-otp-btn"
-                            type="submit"
-                            className="w-full"
-                            disabled={isLoading || otp.join("").length < 6}
-                        >
-                            {isLoading ? (
-                                <>
-                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                    Verifying...
-                                </>
-                            ) : (
-                                "Verify OTP"
-                            )}
-                        </Button>
-
-                        {/* Resend section */}
-                        <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
-                            <span>Didn&apos;t receive it?</span>
-                            <button
-                                id="resend-otp-btn"
-                                type="button"
-                                onClick={handleResend}
-                                disabled={isResending || resendCooldown > 0}
-                                className="flex items-center gap-1 font-medium text-primary hover:underline disabled:cursor-not-allowed disabled:opacity-50"
-                            >
-                                {isResending ? (
-                                    <Loader2 className="h-3 w-3 animate-spin" />
-                                ) : (
-                                    <RefreshCw className="h-3 w-3" />
-                                )}
-                                {resendCooldown > 0 ? `Resend in ${resendCooldown}s` : "Resend OTP"}
-                            </button>
-                        </div>
-
-                        <p className="text-center text-sm text-muted-foreground">
-                            Wrong email?{" "}
-                            <Link href="/signup" className="font-medium text-primary hover:underline">
-                                Go back
-                            </Link>
-                        </p>
-                    </form>
-                </CardContent>
-            </Card>
+            <Suspense fallback={
+                <div className="flex justify-center p-8">
+                    <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                </div>
+            }>
+                <VerifyOtpForm />
+            </Suspense>
         </div>
     )
 }

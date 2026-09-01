@@ -95,15 +95,27 @@ export default function DashboardPage() {
 
   // Find active program object
   const currentProgramObj = useMemo(() => {
+    if ((selectedProgram || "").toUpperCase() === "ALL") {
+      return {
+        code: "ALL",
+        name: "All Academic Programs",
+        description: `Curriculum and study resources across all ${programs.length} degree programs`,
+        totalSemesters: 6
+      }
+    }
     return programs.find(p => p.code.toUpperCase() === (selectedProgram || "BCA").toUpperCase()) || {
       code: selectedProgram || "BCA",
       name: selectedProgram === "BCA" ? "Bachelor of Computer Applications" : `${selectedProgram} Program`,
+      description: "Curriculum structured across 6 semesters",
       totalSemesters: 6
     }
   }, [programs, selectedProgram])
 
   // Filter resources by selected program
   const programResources = useMemo(() => {
+    if ((selectedProgram || "").toUpperCase() === "ALL") {
+      return allResources
+    }
     return allResources.filter(r => (r.program || "BCA").toUpperCase() === (selectedProgram || "BCA").toUpperCase())
   }, [allResources, selectedProgram])
 
@@ -126,10 +138,14 @@ export default function DashboardPage() {
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-bold tracking-tight">
-            Welcome back, {user?.name?.split(" ")[0]}!
+            {user ? `Welcome back, ${user.name?.split(" ")[0]}!` : "Welcome to quickGyan!"}
           </h1>
           <p className="text-muted-foreground">
-            Enrollment: {user?.enrollmentNo || "Student"} • Current Program: <span className="font-semibold text-foreground">{currentProgramObj.code}</span>
+            {user ? (
+              <>Enrollment: {user.enrollmentNo || "Student"} • Current Program: <span className="font-semibold text-foreground">{currentProgramObj.code}</span></>
+            ) : (
+              <>Explore courses and resources freely • Sign in to save AI history • Current Program: <span className="font-semibold text-foreground">{currentProgramObj.code}</span></>
+            )}
           </p>
         </div>
 
@@ -139,10 +155,11 @@ export default function DashboardPage() {
             <Layers className="h-4 w-4 text-primary" />
             <span className="text-xs font-medium text-muted-foreground">Program:</span>
             <Select value={selectedProgram} onValueChange={setSelectedProgram}>
-              <SelectTrigger className="h-7 w-[130px] border-none bg-transparent p-0 text-sm font-semibold shadow-none focus:ring-0">
+              <SelectTrigger className="h-7 min-w-[130px] max-w-[200px] border-none bg-transparent p-0 text-sm font-semibold shadow-none focus:ring-0">
                 <SelectValue placeholder="Select Program" />
               </SelectTrigger>
               <SelectContent>
+                <SelectItem value="ALL">All Programs</SelectItem>
                 {programs.map((prog) => (
                   <SelectItem key={prog.code} value={prog.code}>
                     {prog.code} ({prog.totalSemesters} Sem)
@@ -179,13 +196,15 @@ export default function DashboardPage() {
               <div>
                 <CardTitle className="text-lg">{currentProgramObj.name}</CardTitle>
                 <CardDescription>
-                  Curriculum structured across {currentProgramObj.totalSemesters} semesters
+                  {currentProgramObj.code === "ALL"
+                    ? `Curriculum and study resources across all ${programs.length} degree programs`
+                    : `Curriculum structured across ${currentProgramObj.totalSemesters} semesters`}
                 </CardDescription>
               </div>
             </div>
             <div className="flex items-center gap-2">
               <Badge variant="secondary" className="font-mono text-xs">
-                {currentProgramObj.code}
+                {currentProgramObj.code === "ALL" ? "All Programs" : currentProgramObj.code}
               </Badge>
               <Badge variant="outline" className="text-xs">
                 {programResources.length} Total Materials
@@ -214,22 +233,32 @@ export default function DashboardPage() {
       {/* Quick Access Cards */}
       {user?.role !== 'admin' && (
         <div className="grid gap-4 sm:grid-cols-3">
-          {quickAccessCards.map((card) => (
-            <Link key={card.title} href={card.href}>
-              <Card className="transition-all hover:border-primary/30 hover:shadow-md h-full">
-                <CardContent className="flex items-center gap-4 p-4">
-                  <div className={`rounded-lg p-3 ${card.color}`}>
-                    <card.icon className="h-5 w-5" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <h3 className="font-medium">{card.title}</h3>
-                    <p className="text-sm text-muted-foreground truncate">{card.description}</p>
-                  </div>
-                  <ArrowRight className="h-4 w-4 text-muted-foreground shrink-0" />
-                </CardContent>
-              </Card>
-            </Link>
-          ))}
+          {quickAccessCards.map((card) => {
+            const isAICard = card.href === "/dashboard/ai-chat"
+            return (
+              <Link key={card.title} href={card.href}>
+                <Card className="transition-all hover:border-primary/30 hover:shadow-md h-full relative overflow-hidden">
+                  <CardContent className="flex items-center gap-4 p-4">
+                    <div className={`rounded-lg p-3 ${card.color}`}>
+                      <card.icon className="h-5 w-5" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <h3 className="font-medium">{card.title}</h3>
+                        {!user && isAICard && (
+                          <Badge variant="outline" className="text-[10px] py-0 px-1.5 border-amber-500/30 text-amber-600 dark:text-amber-400 bg-amber-500/10">
+                            Login required
+                          </Badge>
+                        )}
+                      </div>
+                      <p className="text-sm text-muted-foreground truncate">{card.description}</p>
+                    </div>
+                    <ArrowRight className="h-4 w-4 text-muted-foreground shrink-0" />
+                  </CardContent>
+                </Card>
+              </Link>
+            )
+          })}
         </div>
       )}
 
@@ -238,9 +267,11 @@ export default function DashboardPage() {
         <Card>
           <CardHeader>
             <div className="flex items-center justify-between">
-              <CardTitle className="text-lg">Recent Resources ({currentProgramObj.code})</CardTitle>
+              <CardTitle className="text-lg">
+                Recent Resources {currentProgramObj.code === "ALL" ? "(All Programs)" : `(${currentProgramObj.code})`}
+              </CardTitle>
               <Button variant="ghost" size="sm" asChild>
-                <Link href={`/dashboard/resources?program=${currentProgramObj.code}`}>View all</Link>
+                <Link href={currentProgramObj.code === "ALL" ? "/dashboard/resources" : `/dashboard/resources?program=${currentProgramObj.code}`}>View all</Link>
               </Button>
             </div>
           </CardHeader>

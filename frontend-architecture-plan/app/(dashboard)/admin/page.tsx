@@ -71,7 +71,7 @@ export default function AdminDashboard() {
       if (progRes.success && progRes.data) {
         setStats(prev => ({
           ...prev,
-          totalPrograms: progRes.data.length
+          totalPrograms: progRes.data?.length || 0
         }))
       }
 

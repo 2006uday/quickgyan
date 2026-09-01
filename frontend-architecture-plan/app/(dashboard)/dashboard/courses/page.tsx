@@ -54,6 +54,15 @@ export default function CoursesPage() {
 
   // Find active program object
   const currentProgramObj = useMemo(() => {
+    if ((selectedProgram || "").toUpperCase() === "ALL") {
+      return {
+        code: "ALL",
+        name: "All Academic Programs",
+        description: "Comprehensive curriculum across all university degree programs",
+        totalSemesters: 6,
+        category: "All Programs"
+      }
+    }
     return programs.find(p => p.code.toUpperCase() === (selectedProgram || "BCA").toUpperCase()) || {
       code: selectedProgram || "BCA",
       name: selectedProgram === "BCA" ? "Bachelor of Computer Applications" : `${selectedProgram} Program`,
@@ -81,6 +90,9 @@ export default function CoursesPage() {
 
   // Filter courses for active program, semester, and search query
   const programCourses = useMemo(() => {
+    if ((selectedProgram || "").toUpperCase() === "ALL") {
+      return courses
+    }
     return courses.filter(c => (c.Program || c.program || "BCA").toUpperCase() === (selectedProgram || "BCA").toUpperCase())
   }, [courses, selectedProgram])
 
@@ -166,6 +178,46 @@ export default function CoursesPage() {
         </div>
 
         <div className="flex flex-wrap items-center gap-2 pt-1">
+          <button
+            type="button"
+            onClick={() => {
+              setSelectedProgram("ALL")
+              setSelectedSemester(null)
+              setViewMode("all-programs")
+            }}
+            className={`group flex items-center gap-2.5 rounded-xl px-4 py-2.5 text-sm font-medium transition-all shadow-xs border text-left ${
+              viewMode === "all-programs" || (selectedProgram || "").toUpperCase() === "ALL"
+                ? "border-primary bg-primary text-primary-foreground shadow-md ring-2 ring-primary/20"
+                : "border-border bg-background text-muted-foreground hover:border-primary/50 hover:text-foreground hover:bg-muted/40"
+            }`}
+          >
+            <div className={`flex h-6 w-6 items-center justify-center rounded-md text-xs font-bold ${
+              viewMode === "all-programs" || (selectedProgram || "").toUpperCase() === "ALL"
+                ? "bg-primary-foreground/20 text-primary-foreground"
+                : "bg-primary/10 text-primary"
+            }`}>
+              ALL
+            </div>
+            <div>
+              <div className="flex items-center gap-1.5">
+                <span className={`font-semibold ${viewMode === "all-programs" || (selectedProgram || "").toUpperCase() === "ALL" ? "text-primary-foreground" : "text-foreground"}`}>
+                  All Programs
+                </span>
+                <Badge
+                  variant={viewMode === "all-programs" || (selectedProgram || "").toUpperCase() === "ALL" ? "secondary" : "outline"}
+                  className="text-[10px] px-1.5 py-0 font-normal"
+                >
+                  {programs.length}
+                </Badge>
+              </div>
+              <p className={`text-[11px] truncate max-w-[160px] ${
+                viewMode === "all-programs" || (selectedProgram || "").toUpperCase() === "ALL" ? "text-primary-foreground/80" : "text-muted-foreground"
+              }`}>
+                {courses.length} courses available
+              </p>
+            </div>
+          </button>
+
           {programs.map((prog) => {
             const isSelected = viewMode === "program" && (selectedProgram || "BCA").toUpperCase() === prog.code.toUpperCase()
             const progCourseCount = courses.filter(c => (c.Program || c.program || "BCA").toUpperCase() === prog.code.toUpperCase()).length
