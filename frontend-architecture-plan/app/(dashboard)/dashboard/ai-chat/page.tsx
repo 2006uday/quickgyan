@@ -11,6 +11,7 @@ import { cn } from "@/lib/utils"
 import ReactMarkdown from "react-markdown"
 import remarkGfm from "remark-gfm"
 import Link from "next/link"
+import { useAuth } from "@/lib/auth-context"
 import {
   Brain,
   Send,
@@ -26,6 +27,8 @@ import {
   History,
   ShieldCheck,
   ArrowRight,
+  Copy,
+  Check,
 } from "lucide-react"
 
 interface Message {
@@ -58,7 +61,52 @@ const suggestedQuestions = [
   },
 ]
 
-import { useAuth } from "@/lib/auth-context"
+function CodeBlock({ children, className, ...props }: any) {
+  const [copied, setCopied] = useState(false)
+  const match = /language-(\w+)/.exec(className || "")
+  const language = match ? match[1] : ""
+  const codeString = String(children).replace(/\n$/, "")
+
+  const handleCopy = () => {
+    if (typeof navigator !== "undefined" && navigator.clipboard) {
+      navigator.clipboard.writeText(codeString)
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
+    }
+  }
+
+  return (
+    <div className="relative my-3 rounded-xl overflow-hidden border border-slate-800 bg-slate-950 shadow-md text-left">
+      <div className="flex items-center justify-between px-3.5 py-1.5 bg-slate-900/90 border-b border-slate-800 text-[11px] font-mono text-slate-400">
+        <span className="uppercase font-semibold tracking-wider text-slate-300">
+          {language || "code"}
+        </span>
+        <button
+          type="button"
+          onClick={handleCopy}
+          className="flex items-center gap-1.5 px-2 py-0.5 rounded hover:bg-slate-800 text-slate-400 hover:text-slate-200 transition-colors"
+        >
+          {copied ? (
+            <>
+              <Check className="h-3 w-3 text-emerald-400" />
+              <span className="text-emerald-400 font-medium text-[11px]">Copied</span>
+            </>
+          ) : (
+            <>
+              <Copy className="h-3 w-3" />
+              <span className="text-[11px]">Copy</span>
+            </>
+          )}
+        </button>
+      </div>
+      <pre className="p-3.5 overflow-x-auto font-mono text-xs leading-relaxed scrollbar-thin bg-transparent m-0 text-slate-100">
+        <code className={cn("bg-transparent p-0 text-slate-100 block font-mono text-xs", className)} {...props}>
+          {children}
+        </code>
+      </pre>
+    </div>
+  )
+}
 
 export default function AIChatPage() {
   const { user, isLoading: isAuthLoading, askAI, getAIHistory, clearAIHistory } = useAuth()
@@ -344,12 +392,35 @@ export default function AIChatPage() {
                       <ReactMarkdown
                         remarkPlugins={[remarkGfm]}
                         components={{
-                          code: ({ node, ...props }) => (
-                            <code className="bg-slate-900/10 text-foreground dark:bg-slate-100/10 dark:text-slate-100 rounded px-1.5 py-0.5 font-mono text-xs font-semibold" {...props} />
-                          ),
-                          pre: ({ node, ...props }) => (
-                            <pre className="bg-slate-950 text-slate-50 p-4 rounded-xl border border-slate-800 overflow-x-auto my-4 shadow-xl scrollbar-thin" {...props} />
-                          ),
+                          pre: ({ children }: any) => <>{children}</>,
+                          code: ({ node, className, children, ...props }: any) => {
+                            const match = /language-(\w+)/.exec(className || "")
+                            const isBlock = Boolean(match) || (typeof children === "string" && children.includes("\n"))
+
+                            if (isBlock) {
+                              return (
+                                <CodeBlock className={className} {...props}>
+                                  {children}
+                                </CodeBlock>
+                              )
+                            }
+
+                            const cleaned = typeof children === "string" ? children.replace(/^`+|`+$/g, "") : children
+
+                            return (
+                              <code
+                                className={cn(
+                                  "rounded-md px-1.5 py-0.5 font-mono text-xs font-medium border",
+                                  message.role === "user"
+                                    ? "bg-primary-foreground/20 text-primary-foreground border-primary-foreground/30"
+                                    : "bg-muted text-foreground border-border/60"
+                                )}
+                                {...props}
+                              >
+                                {cleaned}
+                              </code>
+                            )
+                          },
                           ul: ({ node, ...props }) => <ul className="list-disc pl-4 space-y-2 my-3" {...props} />,
                           ol: ({ node, ...props }) => <ol className="list-decimal pl-4 space-y-2 my-3" {...props} />,
                           blockquote: ({ node, ...props }) => (
