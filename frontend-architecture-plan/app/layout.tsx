@@ -1,6 +1,7 @@
 import React from "react"
 import type { Metadata } from 'next'
 import { Inter, Manrope } from 'next/font/google'
+import Script from 'next/script'
 import { Analytics } from '@vercel/analytics/next'
 import './globals.css'
 import { AuthProvider } from "@/lib/auth-context"
@@ -171,6 +172,20 @@ export default async function RootLayout({
         />
       </head>
       <body className={`${inter.variable} ${manrope.variable} font-sans antialiased`}>
+        {/* Google tag (gtag.js) */}
+        <Script
+          strategy="afterInteractive"
+          src="https://www.googletagmanager.com/gtag/js?id=G-Q4RF49QS34"
+        />
+        <Script id="google-analytics" strategy="afterInteractive">
+          {`
+            window.dataLayer = window.dataLayer || [];
+            function gtag(){dataLayer.push(arguments);}
+            gtag('js', new Date());
+
+            gtag('config', 'G-Q4RF49QS34');
+          `}
+        </Script>
         <AuthProvider initialUser={user}>
           {children}
         </AuthProvider>
