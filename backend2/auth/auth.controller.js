@@ -97,7 +97,7 @@ async function loginPost(req, res) {
 
         const user = await User.findOne({ email });
         if (!user) {
-            return res.status(400).json({ error: "User not found" });
+            return res.status(400).json({ error: "email or password is invalid" });
         }
 
         if (user.status === "suspended") {
@@ -106,7 +106,7 @@ async function loginPost(req, res) {
 
         const isPasswordValid = await bcrypt.compare(password, user.password);
         if (!isPasswordValid) {
-            return res.status(400).json({ error: "Invalid password" });
+            return res.status(400).json({ error: "Invalid password or email" });
         }
 
         const payload = {
@@ -224,7 +224,7 @@ async function otpVerifyPost(req, res) {
             // This case might be for a login-based OTP if implemented later
             user = await User.findOne({ email });
             if (!user) {
-                return res.status(400).json({ error: "User not found" });
+                return res.status(400).json({ error: "email or password is invalid" });
             }
         }
 
@@ -285,30 +285,52 @@ async function allOtpDelete(req, res) {
 
 // user can be logout their account
 async function logoutPost(req, res) {
-    console.log("logoutPost");
+    console.log("logoutPost - executing logout");
     try {
-        // Cookie options MUST match the options used when setting the cookie,
-        // otherwise the browser will ignore the clear directive.
         const cookieOptions = getCookieOptions();
 
+        // 1. Primary clear using current environment settings
         res.clearCookie("accessToken", cookieOptions);
         res.clearCookie("refreshToken", cookieOptions);
 
-        // Also clear the refreshToken stored in DB for this user
-        const token = req.cookies?.accessToken;
+        // 2. Clear using multiple option permutations to guarantee removal across environments/browsers
+        const clearVariations = [
+            { path: "/" },
+            { path: "/", httpOnly: true },
+            { path: "/", secure: true, sameSite: "none", httpOnly: true },
+            { path: "/", secure: false, sameSite: "lax", httpOnly: true },
+            { path: "/", secure: true, sameSite: "lax", httpOnly: true },
+        ];
+
+        for (const opt of clearVariations) {
+            res.clearCookie("accessToken", opt);
+            res.clearCookie("refreshToken", opt);
+            res.cookie("accessToken", "", { ...opt, expires: new Date(0), maxAge: 0 });
+            res.cookie("refreshToken", "", { ...opt, expires: new Date(0), maxAge: 0 });
+        }
+
+        // 3. Invalidate refreshToken stored in DB for this user
+        let token = req.cookies?.accessToken;
+        if (!token && req.headers.cookie) {
+            const match = req.headers.cookie.match(/(?:^|;\s*)accessToken=([^;]+)/);
+            if (match) token = match[1];
+        }
+
         if (token) {
             try {
                 const decoded = jwt.verify(token, JWT_SECRET);
-                await User.updateOne({ _id: decoded.id }, { $set: { refreshToken: [] } });
+                if (decoded?.id) {
+                    await User.updateOne({ _id: decoded.id }, { $set: { refreshToken: [] } });
+                }
             } catch (_) {
-                // Token may already be expired — that's fine, still log out
+                // Token may already be expired — that's fine, still log out cleanly
             }
         }
 
         console.log("User logged out successfully");
         return res.status(200).json({ message: "User logged out successfully" });
     } catch (error) {
-        console.log(error);
+        console.log("Error during logoutPost:", error);
         return res.status(500).json({ error: "Internal server error" });
     }
 }
@@ -366,7 +388,7 @@ async function checkAuth(req, res) {
             const cookieOptions = getCookieOptions();
             res.clearCookie("accessToken", cookieOptions);
             res.clearCookie("refreshToken", cookieOptions);
-            return res.status(401).json({ error: "User not found or unauthorized" });
+            return res.status(401).json({ error: "email or password is invalid or unauthorized" });
         }
         return res.status(200).json({ message: "User is authorized", user: data });
     } catch (error) {
@@ -419,7 +441,7 @@ async function verifyOldPassword(req, res) {
 
         const user = await User.findById(id);
         if (!user) {
-            return res.status(404).json({ error: "User not found" });
+            return res.status(404).json({ error: "email or password is invalid" });
         }
 
         const isPasswordValid = await bcrypt.compare(oldPassword, user.password);
@@ -502,7 +524,7 @@ async function statusUpdate(req, res) {
         const user = await User.findByIdAndUpdate(id, { $set: { status } });
 
         if (!user) {
-            return res.status(404).json({ error: "User not found" });
+            return res.status(404).json({ error: "email or password is invalid" });
         }
 
         return res.status(200).json({ message: "User status updated successfully" });
@@ -521,7 +543,7 @@ async function sendAccountStatusEmail(req, res) {
 
         const user = await User.findById(id);
         if (!user) {
-            return res.status(404).json({ error: "User not found" });
+            return res.status(404).json({ error: "email or password is invalid" });
         }
 
         const transporter = nodemailer.createTransport({

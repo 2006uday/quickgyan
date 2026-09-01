@@ -68,7 +68,7 @@ async function loginPost(req: any, res: any) {
 
         const user = await User.findOne({ email });
         if (!user) {
-            return res.status(400).json({ error: "User not found" });
+            return res.status(400).json({ error: "email or password is invalid" });
         }
 
         if (user.status === "suspended") {
@@ -173,7 +173,7 @@ async function otpVerifyPost(req: any, res: any) {
         const user = await User.findOne({ email });
 
         if (!user) {
-            return res.status(400).json({ error: "User not found" });
+            return res.status(400).json({ error: "email or password is invalid" });
         }
         console.log("email : ", email);
 
@@ -241,12 +241,39 @@ async function allOtpDelete(req: any, res: any) {
 }
 
 async function logoutPost(req: any, res: any) {
-    console.log("logoutPost");
+    console.log("logoutPost - executing logout");
     try {
-        res.clearCookie("accessToken");
-        res.clearCookie("refreshToken");
-        console.log("accessToken present : ", !!req.cookies?.accessToken);
-        console.log("refreshToken present : ", !!req.cookies?.refreshToken);
+        const clearVariations: any[] = [
+            { path: "/" },
+            { path: "/", httpOnly: true },
+            { path: "/", secure: true, sameSite: "none", httpOnly: true },
+            { path: "/", secure: false, sameSite: "lax", httpOnly: true },
+            { path: "/", secure: true, sameSite: "lax", httpOnly: true },
+        ];
+
+        for (const opt of clearVariations) {
+            res.clearCookie("accessToken", opt);
+            res.clearCookie("refreshToken", opt);
+            res.cookie("accessToken", "", { ...opt, expires: new Date(0), maxAge: 0 });
+            res.cookie("refreshToken", "", { ...opt, expires: new Date(0), maxAge: 0 });
+        }
+
+        let token = req.cookies?.accessToken;
+        if (!token && req.headers?.cookie) {
+            const match = req.headers.cookie.match(/(?:^|;\s*)accessToken=([^;]+)/);
+            if (match) token = match[1];
+        }
+
+        if (token) {
+            try {
+                const decodedToken = jwt.verify(token, JWT_SECRET!) as any;
+                if (decodedToken?.id) {
+                    await User.updateOne({ _id: decodedToken.id }, { $set: { refreshToken: [] } });
+                }
+            } catch (_) {
+                // Token may already be expired — that's fine, still log out cleanly
+            }
+        }
 
         console.log("User logged out successfully");
         return res.status(200).json({ message: "User logged out successfully" });
@@ -285,20 +312,32 @@ async function getUserDetails(req: any, res: any) {
 
 async function checkAuth(req: any, res: any) {
     try {
-        const token = req.cookies.accessToken;
+        const token = req.cookies?.accessToken;
+        if (!token) {
+            return res.status(401).json({ error: "Unauthorized" });
+        }
         const decodedToken = jwt.verify(token, JWT_SECRET!) as jwt.JwtPayload;
-        // console.log("decodedToken : ", decodedToken);
         if (!decodedToken) {
             return res.status(401).json({ error: "Unauthorized" });
         }
-        const data = await User.findById({ _id: decodedToken.id });
+        const data = await User.findById(decodedToken.id, { password: 0, refreshToken: 0 });
         if (!data) {
-            res.clearCookie("accessToken");
-            res.clearCookie("refreshToken");
-            return res.status(401).json({ error: "User not found or unauthorized" });
+            const clearVariations: any[] = [
+                { path: "/" },
+                { path: "/", httpOnly: true },
+                { path: "/", secure: true, sameSite: "lax", httpOnly: true },
+            ];
+            for (const opt of clearVariations) {
+                res.clearCookie("accessToken", opt);
+                res.clearCookie("refreshToken", opt);
+            }
+            return res.status(401).json({ error: "email or password is invalid or unauthorized" });
         }
         return res.status(200).json({ message: "User is authorized", user: data });
     } catch (error: any) {
+        if (error.name === "JsonWebTokenError" || error.name === "TokenExpiredError") {
+            return res.status(401).json({ error: "Unauthorized" });
+        }
         console.log(error);
         return res.status(500).json({ error: "Internal server error" });
     }
@@ -345,7 +384,7 @@ async function verifyOldPassword(req: any, res: any) {
 
         const user = await User.findById(id);
         if (!user) {
-            return res.status(404).json({ error: "User not found" });
+            return res.status(404).json({ error: "email or password is invalid" });
         }
 
         const isPasswordValid = await bcrypt.compare(oldPassword, user.password);
@@ -428,7 +467,7 @@ async function statusUpdate(req: any, res: any) {
         const user = await User.findByIdAndUpdate(id, { $set: { status } });
 
         if (!user) {
-            return res.status(404).json({ error: "User not found" });
+            return res.status(404).json({ error: "email or password is invalid" });
         }
 
         return res.status(200).json({ message: "User status updated successfully" });
@@ -447,7 +486,7 @@ async function sendAccountStatusEmail(req: any, res: any) {
 
         const user = await User.findById(id);
         if (!user) {
-            return res.status(404).json({ error: "User not found" });
+            return res.status(404).json({ error: "email or password is invalid" });
         }
 
         const transporter = nodemailer.createTransport({

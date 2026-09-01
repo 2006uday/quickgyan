@@ -275,6 +275,7 @@ export function AuthProvider({ children, initialUser }: { children: ReactNode, i
         setUser(userData);
       } else {
         console.warn("checkUser - res.data.user is missing");
+        setUser(null);
       }
     } catch (err) {
       console.error("checkUser - Error occurred:", err);
@@ -473,28 +474,63 @@ export function AuthProvider({ children, initialUser }: { children: ReactNode, i
 
   const logout = async () => {
     try {
-      console.log("Logout API call started");
-      console.log("axiosConfig : ", axiosConfig);
-      console.log("API_BASE : ", API_BASE);
-      await new Promise(resolve => setTimeout(resolve, 10));
-      await axios.get(`${API_BASE}/logout`, {
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json'
-        },
-        withCredentials: true,
-      }
-      );
-      setUser(null)
-      console.log("Logout API call successful");
+      console.log("Logout process initiated");
+      // Reset user state immediately
+      setUser(null);
 
+      // 1. Clear Next.js server-side cookies via internal API route
+      try {
+        await fetch("/api/auth/logout", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+        });
+      } catch (nextErr) {
+        console.warn("Next.js /api/auth/logout call error:", nextErr);
+      }
+
+      // 2. Call backend logout with credentials (try GET then POST fallback)
+      try {
+        await axios.get(`${API_BASE}/logout`, {
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+          },
+          withCredentials: true,
+        });
+      } catch (getErr) {
+        console.warn("Backend GET logout failed, attempting POST fallback:", getErr);
+        try {
+          await axios.post(`${API_BASE}/logout`, {}, {
+            headers: {
+              'Content-Type': 'application/json',
+              'Accept': 'application/json',
+            },
+            withCredentials: true,
+          });
+        } catch (postErr) {
+          console.error("Backend POST logout also failed:", postErr);
+        }
+      }
+
+      console.log("Logout API calls completed");
     } catch (err) {
-      console.error("Logout API call failed:", err)
+      console.error("Logout error occurred:", err);
     } finally {
-      setUser(null)
-      localStorage.removeItem("quickgyan_user")
-      // Redirect to login page
-      window.location.href = "/login"
+      setUser(null);
+      if (typeof window !== "undefined") {
+        // Clear all local storage and session storage
+        localStorage.removeItem("quickgyan_user");
+        localStorage.removeItem("quickgyan_selected_program");
+        sessionStorage.clear();
+
+        // Expire any document-accessible cookies
+        document.cookie = "accessToken=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+        document.cookie = "refreshToken=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+        document.cookie = "quickgyan_user=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+
+        // Hard redirect to login using replace so back-navigation doesn't show stale cached state
+        window.location.replace("/login");
+      }
     }
   }
 
@@ -515,16 +551,17 @@ export function AuthProvider({ children, initialUser }: { children: ReactNode, i
     id: string,
   ): Promise<{ success: boolean; error?: string }> => {
     try {
-      console.log("id : ", id);
-      const res = await axios.delete(`${API_BASE}/delete-account/`, {
+      console.log("deleteAccount id : ", id);
+      await axios.delete(`${API_BASE}/delete-account/`, {
         headers: {
           'Content-Type': 'application/json',
         },
         withCredentials: true,
-      })
-      return { success: true }
+      });
+      await logout();
+      return { success: true };
     } catch (err) {
-      return { success: false, error: extractError(err, "Failed to delete account. Please try again.") }
+      return { success: false, error: extractError(err, "Failed to delete account. Please try again.") };
     }
   }
 
