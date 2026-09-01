@@ -490,11 +490,10 @@ export default function AdminResourcesPage() {
               <div className="flex-1 overflow-y-auto space-y-4 pr-1 my-2">
                 {/* Drag & Drop Multi-file Upload Box */}
                 <div
-                  className={`flex cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed p-6 transition-colors ${
-                    isDragging
+                  className={`flex cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed p-6 transition-colors ${isDragging
                       ? "border-primary bg-primary/10"
                       : "border-border/80 hover:border-primary/50 hover:bg-muted/30"
-                  }`}
+                    }`}
                   onDragOver={(e) => {
                     e.preventDefault()
                     setIsDragging(true)
@@ -627,9 +626,8 @@ export default function AdminResourcesPage() {
                         return (
                           <div
                             key={item.id}
-                            className={`rounded-xl border p-3 bg-card shadow-xs transition-colors ${
-                              item.fileError ? "border-destructive/60 bg-destructive/5" : "border-border"
-                            }`}
+                            className={`rounded-xl border p-3 bg-card shadow-xs transition-colors ${item.fileError ? "border-destructive/60 bg-destructive/5" : "border-border"
+                              }`}
                           >
                             {/* File Name Header */}
                             <div className="flex items-center justify-between gap-2 pb-2 border-b border-border/40">
@@ -960,7 +958,7 @@ export default function AdminResourcesPage() {
                             const autoName = file.name.replace(/\.[^/.]+$/, "").replace(/[-_]/g, " ")
                             setUploadForm(prev => ({ ...prev, title: autoName }))
                           }
-                          if (file.size > 10 * 1024 * 1024) {
+                          if (file.size > 400 * 1024 * 1024) {
                             setFileError("File is too large! Maximum allowed size is 10MB.")
                           } else {
                             setFileError(null)
@@ -1120,7 +1118,7 @@ export default function AdminResourcesPage() {
                     onChange={(e) => {
                       const file = e.target.files?.[0] || null
                       setSelectedFile(file)
-                      if (file && file.size > 10 * 1024 * 1024) {
+                      if (file && file.size > 400 * 1024 * 1024) {
                         setFileError("File is too large! Maximum allowed size is 10MB.")
                       } else {
                         setFileError(null)
