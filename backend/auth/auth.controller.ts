@@ -108,6 +108,8 @@ async function loginPost(req: any, res: any) {
                 id: user._id,
                 username: user.username,
                 email: user.email,
+                enrollment_no: user.enrollment_no,
+                role: user.role,
                 dob: user.dob,
                 lastActive: user.lastActive,
             },

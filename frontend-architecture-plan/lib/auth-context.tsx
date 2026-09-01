@@ -49,7 +49,7 @@ interface AuthContextType {
   updateProgram: (data: { id: string; code: string; name: string; description?: string; totalSemesters: number; category?: string; status?: string }) => Promise<{ success: boolean; error?: string }>
   deleteProgram: (id: string) => Promise<{ success: boolean; error?: string }>
   /** POST /auth/login — validates credentials and triggers OTP dispatch */
-  login: (email: string, password: string) => Promise<{ success: boolean; error?: string }>
+  login: (email: string, password: string) => Promise<{ success: boolean; user?: User; error?: string }>
   /** POST /auth/otp/verify — verifies the 6-digit OTP for login or signup */
   verifyOtp: (email: string, otp: string) => Promise<{ success: boolean; error?: string }>
   /** POST /auth/otp — (re)sends an OTP to the given email */
@@ -357,7 +357,7 @@ export function AuthProvider({ children, initialUser }: { children: ReactNode, i
   const login = async (
     email: string,
     password: string,
-  ): Promise<{ success: boolean; error?: string }> => {
+  ): Promise<{ success: boolean; user?: User; error?: string }> => {
     try {
       const res = await axios.post(`${API_BASE}/login`, { email, password }, {
         headers: {
@@ -379,10 +379,11 @@ export function AuthProvider({ children, initialUser }: { children: ReactNode, i
           lastActive: u.lastActive,
         };
         setUser(userData);
+        setIsLoading(false);
+        return { success: true, user: userData };
       }
-      setIsLoading(false)
-
-      return { success: true }
+      setIsLoading(false);
+      return { success: true };
     } catch (err) {
       return { success: false, error: extractError(err, "Invalid credentials. Please try again.") }
     }

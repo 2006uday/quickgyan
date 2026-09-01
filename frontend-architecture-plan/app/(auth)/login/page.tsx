@@ -13,13 +13,24 @@ import { BookOpen, Loader2 } from "lucide-react"
 function LoginForm() {
   const router = useRouter()
   const searchParams = useSearchParams()
-  const redirectUrl = searchParams.get("redirect") || "/dashboard"
-  const { login } = useAuth()
+  const redirectParam = searchParams.get("redirect")
+  const { user, isLoading: isAuthLoading, login } = useAuth()
 
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState("")
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
+
+  // Auto-redirect if already authenticated
+  React.useEffect(() => {
+    if (!isAuthLoading && user) {
+      if (user.role === "admin") {
+        router.replace(redirectParam && redirectParam.startsWith("/admin") ? redirectParam : "/admin")
+      } else {
+        router.replace(redirectParam && !redirectParam.startsWith("/admin") ? redirectParam : "/dashboard")
+      }
+    }
+  }, [user, isAuthLoading, router, redirectParam])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -30,14 +41,31 @@ function LoginForm() {
     setIsLoading(false)
 
     if (result.success) {
-      router.push(redirectUrl)
+      const userRole = result.user?.role || "student"
+
+      let targetUrl = "/dashboard"
+      if (userRole === "admin") {
+        if (redirectParam && redirectParam.startsWith("/admin")) {
+          targetUrl = redirectParam
+        } else {
+          targetUrl = "/admin"
+        }
+      } else {
+        if (redirectParam && !redirectParam.startsWith("/admin")) {
+          targetUrl = redirectParam
+        } else {
+          targetUrl = "/dashboard"
+        }
+      }
+
+      window.location.replace(targetUrl)
     } else {
       setError(result.error || "Login failed. Please check your credentials.")
     }
   }
 
-  const signupHref = redirectUrl && redirectUrl !== "/dashboard"
-    ? `/signup?redirect=${encodeURIComponent(redirectUrl)}`
+  const signupHref = redirectParam && redirectParam !== "/dashboard"
+    ? `/signup?redirect=${encodeURIComponent(redirectParam)}`
     : "/signup"
 
   return (
