@@ -34,16 +34,68 @@ async function createBulkNotifications(resourceTitle, resourceType, course) {
 }
 
 
-// admin can be upload their resourse
-async function uploadResourse(req, res) { // Using 'any' for 'req' to avoid 'file is possibly undefined' error
+// Generate signed upload parameters for direct client-to-Cloudinary uploads (bypasses serverless payload limits)
+async function getUploadSignature(req, res) {
     try {
-        const { resourceTitle, resourceType, semester, course, program } = req.body;
+        const { folder } = req.query;
+        const timestamp = Math.round(new Date().getTime() / 1000);
+        const paramsToSign = { timestamp };
+        if (folder) {
+            paramsToSign.folder = folder;
+        }
+
+        const signature = cloudinary.utils.api_sign_request(
+            paramsToSign,
+            process.env.CLOUDINARY_API_SECRET
+        );
+
+        return res.status(200).json({
+            signature,
+            timestamp,
+            apiKey: process.env.CLOUDINARY_API_KEY,
+            cloudName: process.env.CLOUDINARY_CLOUD_NAME,
+            folder: paramsToSign.folder || ""
+        });
+    } catch (error) {
+        console.error("Signature generation error:", error);
+        return res.status(500).json({ error: "Failed to generate upload signature" });
+    }
+}
+
+// admin can upload their resource (supports direct Cloudinary upload via JSON and legacy req.file)
+async function uploadResourse(req, res) {
+    try {
+        const { resourceTitle, resourceType, semester, course, program, fileUrl, publicId, cloudinaryResourceType } = req.body;
         const progCode = (program || "BCA").trim().toUpperCase();
 
-        console.log("Incoming Resource Upload:", { resourceTitle, resourceType, semester, course, program: progCode });
+        console.log("Incoming Resource Upload:", { resourceTitle, resourceType, semester, course, program: progCode, directUpload: !!fileUrl });
+
+        // Direct upload: frontend already uploaded to Cloudinary
+        if (fileUrl && publicId) {
+            const newResource = new Resource({
+                resourceTitle,
+                resourceType: resourceType || "book",
+                semester: semester || 'unclassified',
+                course,
+                program: progCode,
+                fileUrl,
+                publicId,
+                cloudinaryResourceType: cloudinaryResourceType || "raw"
+            });
+
+            await newResource.save();
+            createBulkNotifications(resourceTitle, resourceType || "book", course);
+
+            return res.status(200).json({
+                message: "Resource uploaded and saved successfully",
+                resource: newResource
+            });
+        }
+
+        // Fallback: multipart file buffer uploaded directly to backend
         const file = req.file;
         if (!file) {
-            return res.status(400).json({ error: "No file uploaded" });
+            return res.status(400).json({ error: "No file uploaded or file metadata missing" });
         }
 
         const folderName = `${progCode.toLowerCase()}/semester_${semester || 'unclassified'}`;
@@ -61,7 +113,7 @@ async function uploadResourse(req, res) { // Using 'any' for 'req' to avoid 'fil
         // Save to Database
         const newResource = new Resource({
             resourceTitle,
-            resourceType,
+            resourceType: resourceType || "book",
             semester: semester || 'unclassified',
             course,
             program: progCode,
@@ -73,7 +125,7 @@ async function uploadResourse(req, res) { // Using 'any' for 'req' to avoid 'fil
         await newResource.save();
 
         // Create notifications for all users in the background
-        createBulkNotifications(resourceTitle, resourceType, course);
+        createBulkNotifications(resourceTitle, resourceType || "book", course);
 
         return res.status(200).json({
             message: "Resource uploaded and saved successfully",
@@ -132,7 +184,7 @@ async function getResourceById(req, res) {
 
 async function updateResource(req, res) {
     try {
-        const { id, resourceTitle, resourceType, semester, course, program } = req.body;
+        const { id, resourceTitle, resourceType, semester, course, program, fileUrl, publicId, cloudinaryResourceType } = req.body;
         if (!id) {
             return res.status(400).json({ error: "Resource ID is required" });
         }
@@ -150,8 +202,25 @@ async function updateResource(req, res) {
             updateData.program = program.trim().toUpperCase();
         }
 
-        // Check if a new file is provided
-        if (req.file) {
+        // Direct file update: frontend already uploaded replacement to Cloudinary
+        if (fileUrl && publicId) {
+            // Remove old file from Cloudinary
+            if (existingResource.publicId && existingResource.publicId !== publicId) {
+                try {
+                    await cloudinary.uploader.destroy(existingResource.publicId, {
+                        resource_type: existingResource.cloudinaryResourceType || "auto"
+                    });
+                } catch (cErr) {
+                    console.error("Error removing old Cloudinary resource:", cErr);
+                }
+            }
+
+            updateData.fileUrl = fileUrl;
+            updateData.publicId = publicId;
+            updateData.cloudinaryResourceType = cloudinaryResourceType || "raw";
+        }
+        // Fallback: Check if a new file buffer is provided
+        else if (req.file) {
             // Remove old file from Cloudinary using stored resource type
             if (existingResource.publicId) {
                 await cloudinary.uploader.destroy(existingResource.publicId, {
@@ -215,6 +284,47 @@ async function deleteResource(req, res) {
 
 async function bulkUploadResources(req, res) {
     try {
+        // Direct Cloudinary bulk upload: client uploaded to Cloudinary and sends array of resource objects
+        if (req.body.resources && Array.isArray(req.body.resources)) {
+            const savedResources = [];
+            const failedItems = [];
+
+            for (const item of req.body.resources) {
+                try {
+                    const progCode = (item.program || "BCA").trim().toUpperCase();
+                    const newResource = new Resource({
+                        resourceTitle: item.resourceTitle || item.title || "Untitled Resource",
+                        resourceType: item.resourceType || item.type || "book",
+                        semester: item.semester || "1",
+                        course: item.course || "GENERAL",
+                        program: progCode,
+                        fileUrl: item.fileUrl,
+                        publicId: item.publicId,
+                        cloudinaryResourceType: item.cloudinaryResourceType || "raw"
+                    });
+
+                    await newResource.save();
+                    savedResources.push(newResource);
+                } catch (err) {
+                    console.error("Failed to save resource item:", err);
+                    failedItems.push({ item, error: err.message });
+                }
+            }
+
+            if (savedResources.length > 0) {
+                const firstProg = savedResources[0].program || "BCA";
+                createBulkNotifications(`${savedResources.length} new materials`, "materials", firstProg);
+            }
+
+            return res.status(200).json({
+                message: `${savedResources.length} of ${req.body.resources.length} resource(s) uploaded successfully`,
+                count: savedResources.length,
+                resources: savedResources,
+                failed: failedItems
+            });
+        }
+
+        // Fallback: multipart files uploaded directly to backend
         const files = req.files || [];
         if (!files || files.length === 0) {
             return res.status(400).json({ error: "No files uploaded for bulk processing" });
@@ -288,4 +398,4 @@ async function bulkUploadResources(req, res) {
     }
 }
 
-export default { uploadResourse, bulkUploadResources, getResource, getResourceById, updateResource, deleteResource }
+export default { getUploadSignature, uploadResourse, bulkUploadResources, getResource, getResourceById, updateResource, deleteResource }

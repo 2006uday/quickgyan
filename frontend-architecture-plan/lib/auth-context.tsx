@@ -738,15 +738,83 @@ export function AuthProvider({ children, initialUser }: { children: ReactNode, i
     }
   }
 
+  /**
+   * Directly uploads a file to Cloudinary using a signed request from the backend.
+   * This completely bypasses Vercel's 4.5MB Serverless Function payload limit.
+   */
+  const uploadToCloudinaryDirect = async (file: File, folder?: string) => {
+    const queryParam = folder ? `?folder=${encodeURIComponent(folder)}` : ""
+    const { data: signData } = await axios.get(`${API_BASE_RESOURCES}/upload-signature${queryParam}`, axiosConfig)
+
+    const { signature, timestamp, apiKey, cloudName, folder: resolvedFolder } = signData
+
+    const cloudinaryFormData = new FormData()
+    cloudinaryFormData.append("file", file)
+    cloudinaryFormData.append("api_key", apiKey)
+    cloudinaryFormData.append("timestamp", String(timestamp))
+    cloudinaryFormData.append("signature", signature)
+    if (resolvedFolder) {
+      cloudinaryFormData.append("folder", resolvedFolder)
+    }
+
+    const uploadRes = await axios.post(
+      `https://api.cloudinary.com/v1_1/${cloudName}/auto/upload`,
+      cloudinaryFormData
+    )
+
+    return {
+      fileUrl: uploadRes.data.secure_url as string,
+      publicId: uploadRes.data.public_id as string,
+      cloudinaryResourceType: (uploadRes.data.resource_type || "raw") as string,
+    }
+  }
+
   const addResource = async (formData: FormData) => {
     try {
-      await axios.post(`${API_BASE_RESOURCES}/addresource`, formData, {
-        ...axiosConfig,
-        headers: {
-          ...axiosConfig.headers,
-          "Content-Type": "multipart/form-data",
-        },
-      })
+      const file = formData.get("file")
+      let fileUrl = formData.get("fileUrl") as string | null
+      let publicId = formData.get("publicId") as string | null
+      let cloudinaryResourceType = formData.get("cloudinaryResourceType") as string | null
+
+      const program = (formData.get("program") as string) || "BCA"
+      const semester = (formData.get("semester") as string) || "1"
+      const course = (formData.get("course") as string) || ""
+      const resourceTitle = (formData.get("resourceTitle") as string) || ""
+      const resourceType = (formData.get("resourceType") as string) || "book"
+
+      // If a File object is present, upload directly to Cloudinary first
+      if (file instanceof File && file.size > 0 && !fileUrl) {
+        const folder = `${program.toLowerCase()}/semester_${semester || "unclassified"}`
+        const uploadResult = await uploadToCloudinaryDirect(file, folder)
+        fileUrl = uploadResult.fileUrl
+        publicId = uploadResult.publicId
+        cloudinaryResourceType = uploadResult.cloudinaryResourceType
+      }
+
+      if (fileUrl && publicId) {
+        await axios.post(
+          `${API_BASE_RESOURCES}/addresource`,
+          {
+            resourceTitle,
+            resourceType,
+            semester,
+            course,
+            program,
+            fileUrl,
+            publicId,
+            cloudinaryResourceType,
+          },
+          axiosConfig
+        )
+      } else {
+        await axios.post(`${API_BASE_RESOURCES}/addresource`, formData, {
+          ...axiosConfig,
+          headers: {
+            ...axiosConfig.headers,
+            "Content-Type": "multipart/form-data",
+          },
+        })
+      }
       return { success: true }
     } catch (err) {
       return { success: false, error: extractError(err, "Failed to add resource") }
@@ -755,6 +823,45 @@ export function AuthProvider({ children, initialUser }: { children: ReactNode, i
 
   const bulkAddResources = async (formData: FormData) => {
     try {
+      const files = formData.getAll("files") as File[]
+      const itemsRaw = formData.get("items") as string | null
+      let items: any[] = []
+      if (itemsRaw) {
+        try {
+          items = JSON.parse(itemsRaw)
+        } catch {}
+      }
+
+      // If files are present, upload each directly to Cloudinary in parallel
+      if (files.length > 0 && files.some(f => f instanceof File && f.size > 0)) {
+        const uploadPromises = files.map(async (file, idx) => {
+          const meta = items[idx] || {}
+          const prog = (meta.program || "BCA").toLowerCase()
+          const sem = meta.semester || "1"
+          const folder = `${prog}/semester_${sem}`
+          const uploadResult = await uploadToCloudinaryDirect(file, folder)
+          return {
+            resourceTitle: meta.resourceTitle || file.name.replace(/\.[^/.]+$/, "").replace(/[-_]/g, " "),
+            resourceType: meta.resourceType || "book",
+            semester: sem,
+            course: meta.course || "GENERAL",
+            program: (meta.program || "BCA").toUpperCase(),
+            fileUrl: uploadResult.fileUrl,
+            publicId: uploadResult.publicId,
+            cloudinaryResourceType: uploadResult.cloudinaryResourceType,
+          }
+        })
+
+        const uploadedResources = await Promise.all(uploadPromises)
+
+        const res = await axios.post(
+          `${API_BASE_RESOURCES}/bulk-upload`,
+          { resources: uploadedResources },
+          axiosConfig
+        )
+        return { success: true, data: res.data }
+      }
+
       const res = await axios.post(`${API_BASE_RESOURCES}/bulk-upload`, formData, {
         ...axiosConfig,
         headers: {
@@ -770,13 +877,42 @@ export function AuthProvider({ children, initialUser }: { children: ReactNode, i
 
   const updateResource = async (formData: FormData) => {
     try {
-      await axios.put(`${API_BASE_RESOURCES}/updateresource`, formData, {
-        ...axiosConfig,
-        headers: {
-          ...axiosConfig.headers,
-          "Content-Type": "multipart/form-data",
-        },
-      })
+      const id = formData.get("id") as string
+      const file = formData.get("file")
+      let fileUrl = formData.get("fileUrl") as string | null
+      let publicId = formData.get("publicId") as string | null
+      let cloudinaryResourceType = formData.get("cloudinaryResourceType") as string | null
+
+      const program = (formData.get("program") as string) || "BCA"
+      const semester = (formData.get("semester") as string) || "1"
+      const course = formData.get("course") as string
+      const resourceTitle = formData.get("resourceTitle") as string
+      const resourceType = formData.get("resourceType") as string
+
+      // If a replacement File is selected, upload directly to Cloudinary
+      if (file instanceof File && file.size > 0 && !fileUrl) {
+        const folder = `${program.toLowerCase()}/semester_${semester || "unclassified"}`
+        const uploadResult = await uploadToCloudinaryDirect(file, folder)
+        fileUrl = uploadResult.fileUrl
+        publicId = uploadResult.publicId
+        cloudinaryResourceType = uploadResult.cloudinaryResourceType
+      }
+
+      const payload: Record<string, any> = {
+        id,
+        resourceTitle,
+        resourceType,
+        semester,
+        course,
+        program,
+      }
+      if (fileUrl && publicId) {
+        payload.fileUrl = fileUrl
+        payload.publicId = publicId
+        payload.cloudinaryResourceType = cloudinaryResourceType
+      }
+
+      await axios.put(`${API_BASE_RESOURCES}/updateresource`, payload, axiosConfig)
       return { success: true }
     } catch (err) {
       return { success: false, error: extractError(err, "Failed to update resource") }

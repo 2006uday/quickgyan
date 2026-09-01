@@ -327,7 +327,7 @@ export default function AdminResourcesPage() {
 
     const newItems: BulkResourceItem[] = fileArray.map((file) => {
       const cleanTitle = file.name.replace(/\.[^/.]+$/, "").replace(/[-_]/g, " ")
-      const isOversized = file.size > 10 * 1024 * 1024
+      const isOversized = file.size > 50 * 1024 * 1024
       const matchingCourses = getCoursesForRow(presetProgram, presetSemester)
 
       return {
@@ -338,7 +338,7 @@ export default function AdminResourcesPage() {
         semester: presetSemester || "1",
         course: matchingCourses[0]?.code || "",
         type: presetType || "book",
-        fileError: isOversized ? "File exceeds 10MB limit" : null,
+        fileError: isOversized ? "File exceeds 50MB limit" : null,
       }
     })
 
@@ -401,7 +401,7 @@ export default function AdminResourcesPage() {
 
     const hasErrors = bulkItems.some((item) => item.fileError)
     if (hasErrors) {
-      toast.error("Please remove or replace files that exceed the 10MB limit")
+      toast.error("Please remove or replace files that exceed the 50MB limit")
       return
     }
 
@@ -513,7 +513,7 @@ export default function AdminResourcesPage() {
                     Click to browse or drag & drop multiple files (PDFs, Images)
                   </p>
                   <p className="text-xs text-muted-foreground mt-1">
-                    Upload up to 20 files at once • Maximum 10MB per file
+                    Upload up to 20 files at once • Maximum 50MB per file
                   </p>
                   <input
                     ref={bulkFileInputRef}
@@ -958,8 +958,8 @@ export default function AdminResourcesPage() {
                             const autoName = file.name.replace(/\.[^/.]+$/, "").replace(/[-_]/g, " ")
                             setUploadForm(prev => ({ ...prev, title: autoName }))
                           }
-                          if (file.size > 400 * 1024 * 1024) {
-                            setFileError("File is too large! Maximum allowed size is 10MB.")
+                          if (file.size > 50 * 1024 * 1024) {
+                            setFileError("File is too large! Maximum allowed size is 50MB.")
                           } else {
                             setFileError(null)
                           }
@@ -1118,8 +1118,8 @@ export default function AdminResourcesPage() {
                     onChange={(e) => {
                       const file = e.target.files?.[0] || null
                       setSelectedFile(file)
-                      if (file && file.size > 400 * 1024 * 1024) {
-                        setFileError("File is too large! Maximum allowed size is 10MB.")
+                      if (file && file.size > 50 * 1024 * 1024) {
+                        setFileError("File is too large! Maximum allowed size is 50MB.")
                       } else {
                         setFileError(null)
                       }

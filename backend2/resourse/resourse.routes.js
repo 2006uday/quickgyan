@@ -8,6 +8,7 @@ import resourses from './resourse.controllers.js';
 
 const router = Router();
 
+router.get("/upload-signature", resourses.getUploadSignature);
 router.post("/addresource", upload.single("file"), resourses.uploadResourse);
 router.post("/bulk-upload", upload.array("files", 25), resourses.bulkUploadResources);
 router.get("/getresource", resourses.getResource);
