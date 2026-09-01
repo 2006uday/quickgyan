@@ -15,7 +15,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { cn } from "@/lib/utils"
 
-const NAV_LINKS = [
+const BASE_NAV_LINKS = [
   { label: "Features", href: "/#features" },
   { label: "About", href: "/#about" },
   { label: "Contact", href: "/contact-us" },
@@ -26,6 +26,13 @@ export function Navbar() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [notifications, setNotifications] = useState<any[]>([])
   const [unreadCount, setUnreadCount] = useState(0)
+
+  const dashboardHref = user?.role === "admin" ? "/admin" : "/dashboard"
+
+  const navLinks = [
+    ...BASE_NAV_LINKS,
+    { label: "Dashboard", href: dashboardHref },
+  ]
 
   const fetchNotifications = useCallback(async () => {
     try {
@@ -69,7 +76,7 @@ export function Navbar() {
 
         {/* Desktop Links */}
         <div className="hidden items-center gap-1 md:flex">
-          {NAV_LINKS.map(({ label, href }) => (
+          {navLinks.map(({ label, href }) => (
             <Link
               key={label}
               href={href}
@@ -84,6 +91,14 @@ export function Navbar() {
         <div className="hidden shrink-0 items-center gap-2 md:flex">
           {user ? (
             <div className="flex items-center gap-2">
+              {/* Direct Dashboard Button */}
+              <Button asChild size="sm" className="gap-2">
+                <Link href={dashboardHref}>
+                  <LayoutDashboard className="h-4 w-4" />
+                  Dashboard
+                </Link>
+              </Button>
+
               {/* Notifications */}
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
@@ -146,7 +161,7 @@ export function Navbar() {
                   </div>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem asChild>
-                    <Link href="/dashboard" className="flex items-center gap-2">
+                    <Link href={dashboardHref} className="flex items-center gap-2">
                       <LayoutDashboard className="h-4 w-4" />
                       Dashboard
                     </Link>
@@ -194,7 +209,7 @@ export function Navbar() {
         )}
       >
         <div className="space-y-1 px-4 py-3">
-          {NAV_LINKS.map(({ label, href }) => (
+          {navLinks.map(({ label, href }) => (
             <Link
               key={label}
               href={href}
@@ -220,7 +235,7 @@ export function Navbar() {
                 </div>
               </div>
               <Link
-                href="/dashboard"
+                href={dashboardHref}
                 onClick={() => setMobileMenuOpen(false)}
                 className="flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground"
               >
