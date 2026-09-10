@@ -10,6 +10,7 @@ export const me = async () => {
 
     if (token) {
         headers["Cookie"] = `accessToken=${token}`;
+        headers["Authorization"] = `Bearer ${token}`;
     }
 
     try {
@@ -33,7 +34,7 @@ export const me = async () => {
                 name: data.user.username,
                 email: data.user.email,
                 enrollmentNo: data.user.enrollment_no,
-                role: data.user.role || "student",
+                role: data.user.role === "admin" ? "admin" : "student",
                 createdAt: data.user.createdAt || new Date().toISOString(),
             };
         }

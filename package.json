@@ -1,0 +1,25 @@
+{
+  "name": "quickgyan",
+  "version": "1.0.0",
+  "private": true,
+  "description": "QuickGyan - Academic Platform for IGNOU BCA Students",
+  "scripts": {
+    "dev": "npm --prefix frontend-architecture-plan run dev",
+    "dev:frontend": "npm --prefix frontend-architecture-plan run dev",
+    "dev:backend": "npm --prefix backend2 run dev",
+    "build": "npm --prefix frontend-architecture-plan run build",
+    "build:frontend": "npm --prefix frontend-architecture-plan run build",
+    "start": "npm --prefix frontend-architecture-plan run start",
+    "start:frontend": "npm --prefix frontend-architecture-plan run start",
+    "start:backend": "npm --prefix backend2 run start"
+  },
+  "keywords": [
+    "quickgyan",
+    "nextjs",
+    "express",
+    "mongodb",
+    "education"
+  ],
+  "author": "QuickGyan Team",
+  "license": "ISC"
+}

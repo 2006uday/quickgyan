@@ -41,7 +41,7 @@ function LoginForm() {
     setIsLoading(false)
 
     if (result.success) {
-      const userRole = result.user?.role || "student"
+      const userRole = result.user?.role === "admin" ? "admin" : "student"
 
       let targetUrl = "/dashboard"
       if (userRole === "admin") {
@@ -58,7 +58,7 @@ function LoginForm() {
         }
       }
 
-      window.location.replace(targetUrl)
+      router.replace(targetUrl)
     } else {
       setError(result.error || "Login failed. Please check your credentials.")
     }

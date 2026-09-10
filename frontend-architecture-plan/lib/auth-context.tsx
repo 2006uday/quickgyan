@@ -107,6 +107,41 @@ const axiosConfig = {
   withCredentials: true,
 }
 
+// Request interceptor to automatically attach Authorization header from localStorage
+if (typeof window !== "undefined") {
+  axios.interceptors.request.use((config) => {
+    const token = localStorage.getItem("quickgyan_token");
+    if (token) {
+      config.headers = config.headers || {};
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    config.withCredentials = true;
+    return config;
+  });
+}
+
+function normalizeUser(u: any): User {
+  return {
+    id: u.id || u._id || "",
+    name: u.username || u.name || "",
+    email: u.email || "",
+    enrollmentNo: u.enrollment_no || u.enrollmentNo || "",
+    role: u.role === "admin" ? "admin" : "student",
+    createdAt: u.createdAt || new Date().toISOString(),
+    lastActive: u.lastActive,
+  };
+}
+
+function getStoredUser(): User | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = localStorage.getItem("quickgyan_user");
+    return raw ? JSON.parse(raw) : null;
+  } catch (_) {
+    return null;
+  }
+}
+
 /** Extracts a human-readable error message from an axios error */
 function extractError(err: unknown, fallback: string): string {
   if (axios.isAxiosError(err)) {
@@ -126,13 +161,15 @@ function extractError(err: unknown, fallback: string): string {
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
 export function AuthProvider({ children, initialUser }: { children: ReactNode, initialUser?: User | null }) {
-  const [isLoading, setIsLoading] = useState(!initialUser)
+  const [user, setUser] = useState<User | null>(() => {
+    if (initialUser) return initialUser;
+    return getStoredUser();
+  });
+  const [isLoading, setIsLoading] = useState(!initialUser && !getStoredUser());
 
   // ---------------------------------------------------------------------------
   // Session hydration
   // ---------------------------------------------------------------------------
-
-  const [user, setUser] = useState<User | null>(initialUser || null)
   const [programs, setPrograms] = useState<Program[]>([])
   const [selectedProgram, setSelectedProgramState] = useState<string>("BCA")
 
@@ -256,30 +293,38 @@ export function AuthProvider({ children, initialUser }: { children: ReactNode, i
       console.log("checkUser - Response received:", res.status, res.data);
 
       if (res.status === 401) {
+        if (typeof window !== "undefined") {
+          localStorage.removeItem("quickgyan_token");
+          localStorage.removeItem("quickgyan_refresh_token");
+          localStorage.removeItem("quickgyan_user");
+          document.cookie = "accessToken=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+        }
         setUser(null);
         return;
       }
 
       if (res.data?.user) {
-        const u = res.data.user;
-        const userData: User = {
-          id: u.id || u._id,
-          name: u.username || u.name || "",
-          email: u.email || "",
-          enrollmentNo: u.enrollment_no || u.enrollmentNo || "",
-          role: u.role || "student",
-          createdAt: u.createdAt || new Date().toISOString(),
-          lastActive: u.lastActive,
-        };
+        const userData = normalizeUser(res.data.user);
+        if (typeof window !== "undefined") {
+          localStorage.setItem("quickgyan_user", JSON.stringify(userData));
+        }
         console.log("checkUser - Setting user:", userData);
         setUser(userData);
       } else {
         console.warn("checkUser - res.data.user is missing");
+        if (typeof window !== "undefined") {
+          localStorage.removeItem("quickgyan_token");
+          localStorage.removeItem("quickgyan_user");
+        }
         setUser(null);
       }
     } catch (err) {
       console.error("checkUser - Error occurred:", err);
       // Not logged in or session expired
+      if (typeof window !== "undefined") {
+        localStorage.removeItem("quickgyan_token");
+        localStorage.removeItem("quickgyan_user");
+      }
       setUser(null);
     } finally {
       setIsLoading(false);
@@ -368,16 +413,17 @@ export function AuthProvider({ children, initialUser }: { children: ReactNode, i
       })
 
       if (res.data?.user) {
-        const u = res.data.user;
-        const userData: User = {
-          id: u.id || u._id,
-          name: u.username || u.name || "",
-          email: u.email || "",
-          enrollmentNo: u.enrollment_no || u.enrollmentNo || "",
-          role: u.role || "student",
-          createdAt: u.createdAt || new Date().toISOString(),
-          lastActive: u.lastActive,
-        };
+        const userData = normalizeUser(res.data.user);
+        if (typeof window !== "undefined") {
+          if (res.data.accessToken) {
+            localStorage.setItem("quickgyan_token", res.data.accessToken);
+            document.cookie = `accessToken=${res.data.accessToken}; path=/; max-age=86400; SameSite=Lax${window.location.protocol === 'https:' ? '; Secure' : ''}`;
+          }
+          if (res.data.refreshToken) {
+            localStorage.setItem("quickgyan_refresh_token", res.data.refreshToken);
+          }
+          localStorage.setItem("quickgyan_user", JSON.stringify(userData));
+        }
         setUser(userData);
         setIsLoading(false);
         return { success: true, user: userData };
@@ -402,15 +448,16 @@ export function AuthProvider({ children, initialUser }: { children: ReactNode, i
 
       // If the API returns a user (Conclusion of login/signup), use it
       if (res.data?.user) {
-        const u = res.data.user;
-        const userData: User = {
-          id: u.id || u._id,
-          name: u.username || u.name || "",
-          email: u.email || "",
-          enrollmentNo: u.enrollment_no || u.enrollmentNo || "",
-          role: u.role || "student",
-          createdAt: u.createdAt || new Date().toISOString(),
-          lastActive: u.lastActive,
+        const userData = normalizeUser(res.data.user);
+        if (typeof window !== "undefined") {
+          if (res.data.accessToken) {
+            localStorage.setItem("quickgyan_token", res.data.accessToken);
+            document.cookie = `accessToken=${res.data.accessToken}; path=/; max-age=86400; SameSite=Lax${window.location.protocol === 'https:' ? '; Secure' : ''}`;
+          }
+          if (res.data.refreshToken) {
+            localStorage.setItem("quickgyan_refresh_token", res.data.refreshToken);
+          }
+          localStorage.setItem("quickgyan_user", JSON.stringify(userData));
         }
         setUser(userData)
       } else {
@@ -520,6 +567,8 @@ export function AuthProvider({ children, initialUser }: { children: ReactNode, i
       setUser(null);
       if (typeof window !== "undefined") {
         // Clear all local storage and session storage
+        localStorage.removeItem("quickgyan_token");
+        localStorage.removeItem("quickgyan_refresh_token");
         localStorage.removeItem("quickgyan_user");
         localStorage.removeItem("quickgyan_selected_program");
         sessionStorage.clear();

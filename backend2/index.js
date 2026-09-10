@@ -49,11 +49,29 @@ const PORT = process.env.PORT || 8060;
  */
 app.set("trust proxy", 1);
 app.use(cookieParser());
+
+const allowedOrigins = process.env.FRONTEND_URL
+    ? process.env.FRONTEND_URL.split(',').map(url => url.trim().replace(/\/$/, ''))
+    : [];
+
 app.use(
     cors({
-        methods: ['GET', 'POST', 'PUT', 'DELETE'],
+        methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+        allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'X-Requested-With'],
         origin: function (origin, callback) {
-            callback(null, true);
+            // Allow server-to-server, curl, mobile, or missing origin
+            if (!origin) return callback(null, true);
+            // In development, allow all
+            if (process.env.NODE_ENV !== 'production') return callback(null, true);
+            // Allow explicit production domains
+            if (allowedOrigins.length === 0 || allowedOrigins.includes(origin)) {
+                return callback(null, true);
+            }
+            // Allow vercel preview / production domains
+            if (origin.endsWith('.vercel.app')) {
+                return callback(null, true);
+            }
+            return callback(null, true);
         },
         credentials: true,
     })
@@ -105,11 +123,19 @@ app.use('/announcements', announcementRoutes);
 app.use('/programs', programsRoutes);
 
 /**
- * Simple health check route to verify server status.
- * Returns a basic 'index' string when the root path is accessed.
+ * Health check routes to verify server and database status.
  */
 app.get('/', function (req, res) {
-    res.send('index');
+    res.status(200).json({ status: "ok", message: "QuickGyan API is running" });
+});
+
+app.get('/health', function (req, res) {
+    res.status(200).json({
+        status: "healthy",
+        uptime: process.uptime(),
+        timestamp: new Date().toISOString(),
+        database: isConnected ? "connected" : "connecting",
+    });
 });
 
 /**
@@ -128,19 +154,18 @@ app.use((err, req, res, next) => {
     next();
 });
 
-
-
 /**
- * Start the server if running in a non-serverless environment.
+ * Start the server if running in a persistent or non-serverless environment.
+ * On Vercel serverless, app is exported and invoked by @vercel/node.
  */
-
-connectToDatabase().then(() => {
-    app.listen(PORT, () => {
-        console.log(`Server started on port ${PORT}`);
+if (process.env.NODE_ENV !== 'production' || !process.env.VERCEL) {
+    connectToDatabase().then(() => {
+        app.listen(PORT, () => {
+            console.log(`Server started on port ${PORT}`);
+        });
+    }).catch(err => {
+        console.error("Initial database connection failed:", err);
     });
-}).catch(err => {
-    console.error("Initial database connection failed:", err);
-});
-
+}
 
 export default app;

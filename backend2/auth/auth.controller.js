@@ -7,16 +7,19 @@ import { User, Otp } from './auth.model.js';
 import jwt from "jsonwebtoken";
 import dotenv from "dotenv";
 import nodemailer from "nodemailer";
+import { extractToken } from "./auth.middleware.js";
 dotenv.config();
 
 const JWT_SECRET = process.env.JWT_SECRET;
 if (!JWT_SECRET) throw new Error("JWT_SECRET is not defined in .env");
 
 function getCookieOptions(overrides = {}) {
+    const isProd = process.env.NODE_ENV === "production";
     return {
         httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
-        sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+        secure: isProd,
+        sameSite: isProd ? "none" : "lax",
+        partitioned: isProd,
         path: "/",
         ...overrides,
     };
@@ -127,6 +130,8 @@ async function loginPost(req, res) {
             maxAge: 1000 * 60 * 60 * 24 * 7,
         })).status(200).json({
             message: "User logged in successfully",
+            accessToken,
+            refreshToken,
             user: {
                 id: user._id,
                 username: user.username,
@@ -258,6 +263,8 @@ async function otpVerifyPost(req, res) {
             maxAge: 1000 * 60 * 60 * 24 * 7,
         })).status(200).json({
             message: "OTP verified and account created successfully",
+            accessToken,
+            refreshToken,
             user: userData
         });
     } catch (error) {
@@ -312,11 +319,7 @@ async function logoutPost(req, res) {
         }
 
         // 3. Invalidate refreshToken stored in DB for this user
-        let token = req.cookies?.accessToken;
-        if (!token && req.headers.cookie) {
-            const match = req.headers.cookie.match(/(?:^|;\s*)accessToken=([^;]+)/);
-            if (match) token = match[1];
-        }
+        const token = extractToken(req);
 
         if (token) {
             try {
@@ -340,10 +343,10 @@ async function logoutPost(req, res) {
 async function deleteUser(req, res) {
     console.log("deleteUser : ", req.params);
     try {
-        const id = req.id;
+        const id = req.id || req.user?.id;
         console.log(" id : ", id);
         await User.findByIdAndDelete({ _id: id });
-        const cookieOptions = { httpOnly: true, secure: process.env.NODE_ENV === "production", sameSite: process.env.NODE_ENV === "production" ? "none" : "lax", path: "/" };
+        const cookieOptions = getCookieOptions();
         res.clearCookie("accessToken", cookieOptions);
         res.clearCookie("refreshToken", cookieOptions);
         return res.status(200).json({ message: "User deleted successfully" });
@@ -355,7 +358,7 @@ async function deleteUser(req, res) {
 
 async function getUserDetails(req, res) {
     try {
-        const details = req.cookies.accessToken;
+        const details = extractToken(req);
         if (!details) {
             return res.status(401).json({ error: "Unauthorized" });
         }
@@ -372,11 +375,9 @@ async function getUserDetails(req, res) {
 
 async function checkAuth(req, res) {
     try {
-        const cookieNames = req.cookies ? Object.keys(req.cookies) : [];
-        console.log("checkAuth - Incoming cookie keys:", cookieNames);
-        const token = req.cookies?.accessToken;
+        const token = extractToken(req);
         if (!token) {
-            console.log("checkAuth - No accessToken cookie found.");
+            console.log("checkAuth - No token found in cookies or Authorization header.");
             return res.status(401).json({ error: "Unauthorized" });
         }
         const decodedToken = jwt.verify(token, JWT_SECRET);
