@@ -4,6 +4,7 @@ import { useState, useMemo, useEffect } from "react"
 import { useSearchParams } from "next/navigation"
 import { useAuth } from "@/lib/auth-context"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Skeleton } from "@/components/ui/skeleton"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -402,9 +403,16 @@ export default function ResourcesPage() {
 
       {/* Results count & Active Badges */}
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <p className="text-sm text-muted-foreground">
-          Showing {filteredResources.length > 0 ? startIndex + 1 : 0}-{Math.min(startIndex + itemsPerPage, filteredResources.length)} of {filteredResources.length} resources
-        </p>
+        {loading ? (
+          <div className="flex items-center gap-2 text-sm text-muted-foreground animate-pulse py-1">
+            <Loader2 className="h-4 w-4 animate-spin text-primary" />
+            <span>Loading academic resources...</span>
+          </div>
+        ) : (
+          <p className="text-sm text-muted-foreground">
+            Showing {filteredResources.length > 0 ? startIndex + 1 : 0}-{Math.min(startIndex + itemsPerPage, filteredResources.length)} of {filteredResources.length} resources
+          </p>
+        )}
 
         <div className="flex flex-wrap items-center gap-2">
           {selectedProgramFilter !== "all" && (
@@ -443,72 +451,102 @@ export default function ResourcesPage() {
         </div>
       </div>
 
-      {/* Resource Grid */}
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {paginatedResources.map((resource) => {
-          const Icon = resourceTypeIcons[resource.resourceType as keyof typeof resourceTypeIcons] || FileText
-          const resProg = (resource.program || "BCA").toUpperCase()
-
-          return (
-            <Card key={resource._id} className="flex flex-col hover:border-primary/40 transition-all hover:shadow-md">
-              <CardHeader className="pb-3">
+      {/* Resource Grid / Skeletons */}
+      {loading ? (
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {Array.from({ length: 6 }).map((_, idx) => (
+            <Card key={idx} className="flex flex-col border-border/70 overflow-hidden bg-card/60 animate-pulse">
+              <CardHeader className="pb-3 space-y-3">
                 <div className="flex items-start justify-between gap-2">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
-                    <Icon className="h-5 w-5 text-primary" />
-                  </div>
+                  <Skeleton className="h-10 w-10 rounded-lg bg-primary/10" />
                   <div className="flex items-center gap-1.5">
-                    <Badge variant="outline" className="font-mono text-xs">
-                      {resProg}
-                    </Badge>
-                    <Badge variant="secondary" className="text-xs capitalize">
-                      {resourceTypeLabels[resource.resourceType as keyof typeof resourceTypeLabels] || resource.resourceType}
-                    </Badge>
+                    <Skeleton className="h-5 w-14 rounded-md bg-muted/80" />
+                    <Skeleton className="h-5 w-16 rounded-md bg-muted/80" />
                   </div>
                 </div>
-                <CardTitle className="line-clamp-2 text-base mt-2">{resource.resourceTitle}</CardTitle>
-                <CardDescription>
-                  <span className="font-mono font-medium text-foreground">{resource.course}</span> • Semester {resource.semester}
-                </CardDescription>
+                <Skeleton className="h-5 w-4/5 rounded-md bg-muted/80 mt-2" />
+                <Skeleton className="h-4 w-1/2 rounded-md bg-muted/60" />
               </CardHeader>
-              <CardContent className="mt-auto pt-0">
-                <div className="mb-4 flex flex-wrap gap-3 text-xs text-muted-foreground">
-                  <span className="flex items-center gap-1">
-                    <HardDrive className="h-3 w-3" />
-                    Cloud Document
-                  </span>
-                  <span className="flex items-center gap-1">
-                    <Calendar className="h-3 w-3" />
-                    {new Date(resource.createdAt).toLocaleDateString("en-US", {
-                      month: "short",
-                      year: "numeric",
-                    })}
-                  </span>
+              <CardContent className="mt-auto pt-0 space-y-4">
+                <div className="flex items-center gap-3">
+                  <Skeleton className="h-3.5 w-24 rounded-md bg-muted/60" />
+                  <Skeleton className="h-3.5 w-20 rounded-md bg-muted/60" />
                 </div>
-                <div className="flex gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="flex-1 gap-1 bg-transparent"
-                    onClick={() => setPreviewResource(resource)}
-                  >
-                    <Eye className="h-3 w-3" />
-                    Preview
-                  </Button>
-                  <Button asChild size="sm" className="flex-1 gap-1">
-                    <a href={resource.fileUrl} target="_blank" rel="noopener noreferrer">
-                      <Download className="h-3 w-3" />
-                      View/Save
-                    </a>
-                  </Button>
+                <div className="flex gap-2 pt-1">
+                  <Skeleton className="h-8 flex-1 rounded-md bg-muted/70" />
+                  <Skeleton className="h-8 flex-1 rounded-md bg-muted/70" />
                 </div>
               </CardContent>
             </Card>
-          )
-        })}
-      </div>
+          ))}
+        </div>
+      ) : (
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {paginatedResources.map((resource) => {
+            const Icon = resourceTypeIcons[resource.resourceType as keyof typeof resourceTypeIcons] || FileText
+            const resProg = (resource.program || "BCA").toUpperCase()
+
+            return (
+              <Card key={resource._id} className="flex flex-col hover:border-primary/40 transition-all hover:shadow-md">
+                <CardHeader className="pb-3">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
+                      <Icon className="h-5 w-5 text-primary" />
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <Badge variant="outline" className="font-mono text-xs">
+                        {resProg}
+                      </Badge>
+                      <Badge variant="secondary" className="text-xs capitalize">
+                        {resourceTypeLabels[resource.resourceType as keyof typeof resourceTypeLabels] || resource.resourceType}
+                      </Badge>
+                    </div>
+                  </div>
+                  <CardTitle className="line-clamp-2 text-base mt-2">{resource.resourceTitle}</CardTitle>
+                  <CardDescription>
+                    <span className="font-mono font-medium text-foreground">{resource.course}</span> • Semester {resource.semester}
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="mt-auto pt-0">
+                  <div className="mb-4 flex flex-wrap gap-3 text-xs text-muted-foreground">
+                    <span className="flex items-center gap-1">
+                      <HardDrive className="h-3 w-3" />
+                      Cloud Document
+                    </span>
+                    <span className="flex items-center gap-1">
+                      <Calendar className="h-3 w-3" />
+                      {new Date(resource.createdAt).toLocaleDateString("en-US", {
+                        month: "short",
+                        year: "numeric",
+                      })}
+                    </span>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="flex-1 gap-1 bg-transparent"
+                      onClick={() => setPreviewResource(resource)}
+                    >
+                      <Eye className="h-3 w-3" />
+                      Preview
+                    </Button>
+                    <Button asChild size="sm" className="flex-1 gap-1">
+                      <a href={resource.fileUrl} target="_blank" rel="noopener noreferrer">
+                        <Download className="h-3 w-3" />
+                        View/Save
+                      </a>
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            )
+          })}
+        </div>
+      )}
 
       {/* Pagination Controls */}
-      {totalPages > 1 && (
+      {!loading && totalPages > 1 && (
         <div className="flex items-center justify-center space-x-2 py-8">
           <Button
             variant="outline"
@@ -544,7 +582,7 @@ export default function ResourcesPage() {
         </div>
       )}
 
-      {filteredResources.length === 0 && (
+      {!loading && filteredResources.length === 0 && (
         <Card>
           <CardContent className="flex flex-col items-center justify-center py-12">
             <FileText className="h-12 w-12 text-muted-foreground/50" />

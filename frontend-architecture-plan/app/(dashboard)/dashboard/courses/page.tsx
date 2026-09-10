@@ -3,6 +3,7 @@
 import { useState, useEffect, useMemo } from "react"
 import Link from "next/link"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Skeleton } from "@/components/ui/skeleton"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -346,110 +347,164 @@ export default function CoursesPage() {
             </div>
           </div>
 
-          {/* Semester Grid */}
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {Array.from({ length: totalSemesters }, (_, i) => i + 1).map((sem) => {
-              const semCoursesCount = programCourses.filter(c => String(c.Semester || c.semester) === String(sem)).length
-              const semResCount = getSemesterResourceCount(sem)
-              const isSelected = selectedSemester === sem
+          {/* Loading Indicator */}
+          {loading && (
+            <div className="flex items-center gap-2 text-sm text-muted-foreground animate-pulse py-1">
+              <Loader2 className="h-4 w-4 animate-spin text-primary" />
+              <span>Loading curriculum and courses for {currentProgramObj.code}...</span>
+            </div>
+          )}
 
-              return (
-                <button
-                  key={sem}
-                  type="button"
-                  onClick={() => setSelectedSemester(isSelected ? null : sem)}
-                  className={`flex items-center gap-4 rounded-xl border p-4 text-left transition-all hover:border-primary/50 hover:shadow-md ${
-                    isSelected
-                      ? "border-primary bg-primary/5 shadow-xs ring-1 ring-primary/30"
-                      : "border-border bg-card"
-                  }`}
-                >
-                  <div
-                    className={`flex h-12 w-12 items-center justify-center rounded-lg ${
+          {/* Semester Grid */}
+          {loading ? (
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {Array.from({ length: 6 }).map((_, i) => (
+                <div key={i} className="flex items-center gap-4 rounded-xl border border-border/70 bg-card p-4 animate-pulse">
+                  <Skeleton className="h-12 w-12 rounded-lg bg-primary/10 shrink-0" />
+                  <div className="flex-1 space-y-2">
+                    <Skeleton className="h-5 w-24 rounded-md" />
+                    <Skeleton className="h-3 w-36 rounded-md" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {Array.from({ length: totalSemesters }, (_, i) => i + 1).map((sem) => {
+                const semCoursesCount = programCourses.filter(c => String(c.Semester || c.semester) === String(sem)).length
+                const semResCount = getSemesterResourceCount(sem)
+                const isSelected = selectedSemester === sem
+
+                return (
+                  <button
+                    key={sem}
+                    type="button"
+                    onClick={() => setSelectedSemester(isSelected ? null : sem)}
+                    className={`flex items-center gap-4 rounded-xl border p-4 text-left transition-all hover:border-primary/50 hover:shadow-md ${
                       isSelected
-                        ? "bg-primary text-primary-foreground"
-                        : "bg-primary/10 text-primary"
+                        ? "border-primary bg-primary/5 shadow-xs ring-1 ring-primary/30"
+                        : "border-border bg-card"
                     }`}
                   >
-                    <span className="text-lg font-bold">{sem}</span>
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <h3 className="font-semibold">Semester {sem}</h3>
-                    <p className="text-xs text-muted-foreground mt-0.5">
-                      {semCoursesCount} courses • {semResCount} resources
-                    </p>
-                  </div>
-                </button>
-              )
-            })}
-          </div>
+                    <div
+                      className={`flex h-12 w-12 items-center justify-center rounded-lg ${
+                        isSelected
+                          ? "bg-primary text-primary-foreground"
+                          : "bg-primary/10 text-primary"
+                      }`}
+                    >
+                      <span className="text-lg font-bold">{sem}</span>
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <h3 className="font-semibold">Semester {sem}</h3>
+                      <p className="text-xs text-muted-foreground mt-0.5">
+                        {semCoursesCount} courses • {semResCount} resources
+                      </p>
+                    </div>
+                  </button>
+                )
+              })}
+            </div>
+          )}
 
           {/* Course List Grouped by Semester */}
-          <div className="space-y-6">
-            {groupedSemesters.map((semester) => {
-              return (
-                <Card key={semester.id}>
-                  <CardHeader>
+          {loading ? (
+            <div className="space-y-6">
+              {[1, 2].map((n) => (
+                <Card key={n} className="animate-pulse border-border/70">
+                  <CardHeader className="space-y-2">
                     <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <GraduationCap className="h-5 w-5 text-primary" />
-                        <CardTitle>{currentProgramObj.code} - {semester.name}</CardTitle>
-                      </div>
-                      <Badge variant="outline" className="font-mono text-xs">
-                        Semester {semester.id} of {totalSemesters}
-                      </Badge>
+                      <Skeleton className="h-6 w-48 rounded-md" />
+                      <Skeleton className="h-5 w-28 rounded-md" />
                     </div>
-                    <CardDescription>
-                      {semester.courses.length} course{semester.courses.length !== 1 ? "s" : ""} available in this semester
-                    </CardDescription>
+                    <Skeleton className="h-4 w-36 rounded-md" />
                   </CardHeader>
                   <CardContent>
-                    <div className="divide-y divide-border">
-                      {semester.courses.map((course: any) => {
-                        const cCode = course["Course Code"] || course.code
-                        const cName = course["Course Name"] || course.name
-                        const cId = course._id || course.id
-                        const resCount = getResourceCount(cCode)
-
-                        return (
-                          <Link
-                            key={cId}
-                            href={`/dashboard/resources?program=${currentProgramObj.code}&semester=${semester.id}&course=${cCode}`}
-                            className="flex items-center gap-4 py-4 transition-colors hover:bg-muted/50 -mx-4 px-4 first:pt-0 last:pb-0"
-                          >
-                            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
-                              <BookOpen className="h-5 w-5" />
+                    <div className="divide-y divide-border/60">
+                      {[1, 2, 3].map((row) => (
+                        <div key={row} className="flex items-center gap-4 py-4 -mx-4 px-4 first:pt-0 last:pb-0">
+                          <Skeleton className="h-10 w-10 rounded-lg bg-primary/10 shrink-0" />
+                          <div className="flex-1 space-y-2">
+                            <div className="flex gap-2">
+                              <Skeleton className="h-5 w-16 rounded-md" />
+                              <Skeleton className="h-5 w-24 rounded-md" />
                             </div>
-                            <div className="flex-1 min-w-0">
-                              <div className="flex items-center gap-2">
-                                <Badge variant="secondary" className="font-mono">
-                                  {cCode}
-                                </Badge>
-                                <Badge variant="outline">
-                                  {resCount} Resources
-                                </Badge>
-                                {course.Credits && (
-                                  <span className="text-xs text-muted-foreground">
-                                    {course.Credits} Credits
-                                  </span>
-                                )}
-                              </div>
-                              <p className="mt-1 truncate font-medium">{cName}</p>
-                            </div>
-                            <Button variant="ghost" size="icon">
-                              <ChevronRight className="h-4 w-4" />
-                            </Button>
-                          </Link>
-                        )
-                      })}
+                            <Skeleton className="h-4 w-3/4 rounded-md" />
+                          </div>
+                        </div>
+                      ))}
                     </div>
                   </CardContent>
                 </Card>
-              )
-            })}
-          </div>
+              ))}
+            </div>
+          ) : (
+            <div className="space-y-6">
+              {groupedSemesters.map((semester) => {
+                return (
+                  <Card key={semester.id}>
+                    <CardHeader>
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <GraduationCap className="h-5 w-5 text-primary" />
+                          <CardTitle>{currentProgramObj.code} - {semester.name}</CardTitle>
+                        </div>
+                        <Badge variant="outline" className="font-mono text-xs">
+                          Semester {semester.id} of {totalSemesters}
+                        </Badge>
+                      </div>
+                      <CardDescription>
+                        {semester.courses.length} course{semester.courses.length !== 1 ? "s" : ""} available in this semester
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="divide-y divide-border">
+                        {semester.courses.map((course: any) => {
+                          const cCode = course["Course Code"] || course.code
+                          const cName = course["Course Name"] || course.name
+                          const cId = course._id || course.id
+                          const resCount = getResourceCount(cCode)
 
-          {groupedSemesters.length === 0 && (
+                          return (
+                            <Link
+                              key={cId}
+                              href={`/dashboard/resources?program=${currentProgramObj.code}&semester=${semester.id}&course=${cCode}`}
+                              className="flex items-center gap-4 py-4 transition-colors hover:bg-muted/50 -mx-4 px-4 first:pt-0 last:pb-0"
+                            >
+                              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                                <BookOpen className="h-5 w-5" />
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-2">
+                                  <Badge variant="secondary" className="font-mono">
+                                    {cCode}
+                                  </Badge>
+                                  <Badge variant="outline">
+                                    {resCount} Resources
+                                  </Badge>
+                                  {course.Credits && (
+                                    <span className="text-xs text-muted-foreground">
+                                      {course.Credits} Credits
+                                    </span>
+                                  )}
+                                </div>
+                                <p className="mt-1 truncate font-medium">{cName}</p>
+                              </div>
+                              <Button variant="ghost" size="icon">
+                                <ChevronRight className="h-4 w-4" />
+                              </Button>
+                            </Link>
+                          )
+                        })}
+                      </div>
+                    </CardContent>
+                  </Card>
+                )
+              })}
+            </div>
+          )}
+
+          {!loading && groupedSemesters.length === 0 && (
             <Card>
               <CardContent className="flex flex-col items-center justify-center py-12">
                 <Search className="h-12 w-12 text-muted-foreground/50" />

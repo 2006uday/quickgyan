@@ -30,7 +30,9 @@ import {
   Bell,
   Layers,
   GraduationCap,
+  Loader2,
 } from "lucide-react"
+import { Skeleton } from "@/components/ui/skeleton"
 import { useEffect, useState, useMemo } from "react"
 
 const quickAccessCards = [
@@ -62,35 +64,38 @@ export default function DashboardPage() {
   const [allResources, setAllResources] = useState<any[]>([])
   const [announcements, setAnnouncements] = useState<any[]>([])
   const [notifications, setNotifications] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     checkUser();
-    getPrograms();
 
-    const fetchResourcesData = async () => {
-      const response = await getResources();
-      if (response.success && response.data?.resources) {
-        setAllResources(response.data.resources || []);
+    const loadDashboardData = async () => {
+      try {
+        setLoading(true);
+        const [programsRes, resourcesRes, announcementsRes, notificationsRes] = await Promise.allSettled([
+          getPrograms(),
+          getResources(),
+          getAnnouncements(),
+          getNotifications(),
+        ]);
+
+        if (resourcesRes.status === "fulfilled" && resourcesRes.value?.success && resourcesRes.value?.data?.resources) {
+          setAllResources(resourcesRes.value.data.resources || []);
+        }
+        if (announcementsRes.status === "fulfilled" && announcementsRes.value?.success && announcementsRes.value?.data) {
+          setAnnouncements(announcementsRes.value.data.slice(0, 5));
+        }
+        if (notificationsRes.status === "fulfilled" && notificationsRes.value?.success && notificationsRes.value?.data?.notifications) {
+          setNotifications(notificationsRes.value.data.notifications.slice(0, 10));
+        }
+      } catch (err) {
+        console.error("Dashboard data load error:", err);
+      } finally {
+        setLoading(false);
       }
     };
 
-    const fetchAnnouncements = async () => {
-      const response = await getAnnouncements();
-      if (response.success && response.data) {
-        setAnnouncements(response.data.slice(0, 5));
-      }
-    };
-
-    const fetchNotifications = async () => {
-      const response = await getNotifications();
-      if (response.success && response.data?.notifications) {
-        setNotifications(response.data.notifications.slice(0, 10));
-      }
-    };
-
-    fetchResourcesData();
-    fetchAnnouncements();
-    fetchNotifications();
+    loadDashboardData();
   }, [])
 
   // Find active program object
@@ -207,7 +212,14 @@ export default function DashboardPage() {
                 {currentProgramObj.code === "ALL" ? "All Programs" : currentProgramObj.code}
               </Badge>
               <Badge variant="outline" className="text-xs">
-                {programResources.length} Total Materials
+                {loading ? (
+                  <span className="flex items-center gap-1.5">
+                    <Loader2 className="h-3 w-3 animate-spin text-primary" />
+                    Loading...
+                  </span>
+                ) : (
+                  `${programResources.length} Total Materials`
+                )}
               </Badge>
             </div>
           </div>
@@ -215,15 +227,27 @@ export default function DashboardPage() {
         <CardContent>
           <div className="grid grid-cols-3 gap-4 text-center">
             <div className="rounded-lg bg-card/60 border border-border/50 p-3 shadow-xs">
-              <p className="text-2xl font-bold text-primary">{stats.books}</p>
+              {loading ? (
+                <Skeleton className="h-7 w-12 mx-auto rounded-md mb-1" />
+              ) : (
+                <p className="text-2xl font-bold text-primary">{stats.books}</p>
+              )}
               <p className="text-xs font-medium text-muted-foreground">Textbooks</p>
             </div>
             <div className="rounded-lg bg-card/60 border border-border/50 p-3 shadow-xs">
-              <p className="text-2xl font-bold text-primary">{stats.notes}</p>
+              {loading ? (
+                <Skeleton className="h-7 w-12 mx-auto rounded-md mb-1" />
+              ) : (
+                <p className="text-2xl font-bold text-primary">{stats.notes}</p>
+              )}
               <p className="text-xs font-medium text-muted-foreground">Study Notes</p>
             </div>
             <div className="rounded-lg bg-card/60 border border-border/50 p-3 shadow-xs">
-              <p className="text-2xl font-bold text-primary">{stats.papers}</p>
+              {loading ? (
+                <Skeleton className="h-7 w-12 mx-auto rounded-md mb-1" />
+              ) : (
+                <p className="text-2xl font-bold text-primary">{stats.papers}</p>
+              )}
               <p className="text-xs font-medium text-muted-foreground">Question Papers</p>
             </div>
           </div>
@@ -277,7 +301,23 @@ export default function DashboardPage() {
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
-              {recentResources.length > 0 ? (
+              {loading ? (
+                <div className="space-y-3">
+                  {[1, 2, 3].map((i) => (
+                    <div
+                      key={i}
+                      className="flex items-start gap-3 rounded-lg p-2.5 border border-border/40 animate-pulse"
+                    >
+                      <Skeleton className="h-9 w-9 rounded-lg bg-primary/10 shrink-0" />
+                      <div className="flex-1 space-y-2 min-w-0">
+                        <Skeleton className="h-4 w-3/4 rounded-md" />
+                        <Skeleton className="h-3 w-1/2 rounded-md" />
+                      </div>
+                      <Skeleton className="h-3 w-16 rounded-md shrink-0" />
+                    </div>
+                  ))}
+                </div>
+              ) : recentResources.length > 0 ? (
                 recentResources.map((resource, i) => (
                   <div
                     key={i}
@@ -328,7 +368,22 @@ export default function DashboardPage() {
 
             <CardContent className="pt-6">
               <TabsContent value="announcements" className="m-0 space-y-4">
-                {announcements.length > 0 ? (
+                {loading ? (
+                  <div className="space-y-3">
+                    {[1, 2, 3].map((i) => (
+                      <div
+                        key={i}
+                        className="rounded-lg border border-border p-3 space-y-2 animate-pulse"
+                      >
+                        <div className="flex items-center justify-between">
+                          <Skeleton className="h-4 w-40 rounded-md" />
+                          <Skeleton className="h-3 w-16 rounded-md" />
+                        </div>
+                        <Skeleton className="h-3 w-full rounded-md" />
+                      </div>
+                    ))}
+                  </div>
+                ) : announcements.length > 0 ? (
                   announcements.map((announcement, i) => (
                     <div
                       key={i}
@@ -352,7 +407,22 @@ export default function DashboardPage() {
               </TabsContent>
 
               <TabsContent value="notifications" className="m-0 space-y-4">
-                {notifications.length > 0 ? (
+                {loading ? (
+                  <div className="space-y-3">
+                    {[1, 2, 3].map((i) => (
+                      <div
+                        key={i}
+                        className="p-3 rounded-lg border border-border space-y-2 animate-pulse"
+                      >
+                        <div className="flex items-center justify-between">
+                          <Skeleton className="h-4 w-36 rounded-md" />
+                          <Skeleton className="h-3 w-16 rounded-md" />
+                        </div>
+                        <Skeleton className="h-3 w-5/6 rounded-md" />
+                      </div>
+                    ))}
+                  </div>
+                ) : notifications.length > 0 ? (
                   notifications.map((notification, i) => (
                     <div
                       key={i}
